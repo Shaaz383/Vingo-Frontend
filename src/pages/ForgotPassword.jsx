@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { FaEnvelope, FaArrowLeft, FaLock } from "react-icons/fa";
@@ -12,6 +12,17 @@ function ForgotPassword() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!otpSent) return;
+    if (resendCooldown === 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpSent, resendCooldown]);
 
   const validate = () => {
     const newErrors = {};
@@ -32,7 +43,7 @@ function ForgotPassword() {
     setSuccessMessage("");
 
     try {
-      await axios.post(
+      const { data } = await axios.post(
         "http://localhost:3000/api/auth/send-otp",
         { email },
         {
@@ -41,6 +52,14 @@ function ForgotPassword() {
         }
       );
       setSuccessMessage("OTP has been sent to your email.");
+      setOtpSent(true);
+      setOtp("");
+      setResendCooldown(60);
+      // For dev: if backend returns otp (when emails are disabled), prefill a hint in console
+      if (data && data.otp) {
+        // eslint-disable-next-line no-console
+        console.log("[DEV ONLY] OTP:", data.otp);
+      }
     } catch (error) {
       if (error.response) {
         setErrors((prev) => ({
@@ -199,7 +218,7 @@ function ForgotPassword() {
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={isLoading}
+                  disabled={isLoading || !!errors.email || !email}
                   className={`w-full py-3 px-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow-lg ${
                     isLoading
                       ? "bg-gray-400 cursor-not-allowed"
@@ -210,39 +229,57 @@ function ForgotPassword() {
                 </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  name="otp"
-                  value={otp}
-                  onChange={(e) => {
-                    setOtp(e.target.value);
-                    if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
-                  }}
-                  className={`outline-none w-full px-4 py-3 border rounded-xl text-sm sm:text-base focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 ${
-                    errors.otp ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Enter the 6-digit OTP"
-                />
-                {errors.otp && (
-                  <p className="mt-1 text-sm text-red-600">{errors.otp}</p>
-                )}
-              </div>
+              {otpSent && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="otp"
+                      value={otp}
+                      onChange={(e) => {
+                        setOtp(e.target.value);
+                        if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
+                      }}
+                      className={`outline-none w-full px-4 py-3 border rounded-xl text-sm sm:text-base focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 ${
+                        errors.otp ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="Enter the 6-digit OTP"
+                    />
+                    {errors.otp && (
+                      <p className="mt-1 text-sm text-red-600">{errors.otp}</p>
+                    )}
+                  </div>
 
-              <button
-                type="button"
-                onClick={handleVerifyOtp}
-                disabled={isLoading}
-                className={`w-full py-3 px-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow-lg ${
-                  isLoading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.99] hover:shadow-xl"
-                } text-white`}
-              >
-                {isLoading ? "Verifying..." : "Verify OTP"}
-              </button>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={isLoading || !otp}
+                      className={`w-full py-3 px-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow-lg ${
+                        isLoading
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.99] hover:shadow-xl"
+                      } text-white`}
+                    >
+                      {isLoading ? "Verifying..." : "Verify OTP"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isLoading || resendCooldown > 0}
+                      className={`w-full py-3 px-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow ${
+                        isLoading || resendCooldown > 0
+                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : "bg-white text-orange-600 border border-orange-200 hover:border-orange-400"
+                      }`}
+                    >
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                    </button>
+                  </div>
+                </>
+              )}
 
               {successMessage && (
                 <p className="text-center text-sm text-green-600">{successMessage}</p>
