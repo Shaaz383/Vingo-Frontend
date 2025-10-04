@@ -3,8 +3,10 @@ import { Routes, Route } from "react-router-dom";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
+import useGetCurrentUser from "./hooks/useGetCurrentUser";
 
 function App() {
+  useGetCurrentUser()
   return (
   <Routes> 
     <Route path="/signup" element={<SignUp />} />
