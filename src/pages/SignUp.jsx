@@ -11,6 +11,8 @@ import {
   FaPhone,
   FaGoogle,
 } from "react-icons/fa";
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../Firebase';
 
 function SignUp() {
   const [formData, setFormData] = useState({
@@ -27,6 +29,70 @@ function SignUp() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+
+  const handleGoogleAuth = async () => {
+    try {
+      setIsLoading(true);
+      setErrors({});
+
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Send Google user data to backend
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/google",
+        {
+          googleId: user.uid,
+          email: user.email,
+          fullName: user.displayName,
+          profilePicture: user.photoURL,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Google signup success:", response.data);
+      alert("Welcome! Your account has been created successfully with Google.");
+
+      // Navigate to homepage
+      navigate("/");
+    } catch (error) {
+      console.error("Google signup error:", error);
+      
+      if (error.code === "auth/popup-blocked") {
+        setErrors((prev) => ({
+          ...prev,
+          api: "Popup was blocked. Please allow popups for this site and try again.",
+        }));
+      } else if (error.code === "auth/popup-closed-by-user") {
+        setErrors((prev) => ({
+          ...prev,
+          api: "Sign-up was cancelled. Please try again.",
+        }));
+      } else if (error.response) {
+        setErrors((prev) => ({
+          ...prev,
+          api: error.response.data.message || "Google signup failed",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          api: error.message || "An unexpected error occurred",
+        }));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -391,11 +457,14 @@ function SignUp() {
             {/* Sign up with Google */}
             <button
               type="button"
-              onClick={() => console.log("Sign up with Google clicked")}
-              className="w-full mt-2 border border-gray-300 bg-white text-gray-700 py-3 px-4 rounded-xl font-semibold text-base sm:text-lg hover:bg-gray-50 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2"
+              onClick={handleGoogleAuth}
+              disabled={isLoading}
+              className={`w-full mt-2 border border-gray-300 bg-white text-gray-700 py-3 px-4 rounded-xl font-semibold text-base sm:text-lg hover:bg-gray-50 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <FaGoogle className="h-5 w-5 text-red-500" />
-              Sign up with Google
+              {isLoading ? "Creating account..." : "Sign up with Google"}
             </button>
 
             {errors.api && (
