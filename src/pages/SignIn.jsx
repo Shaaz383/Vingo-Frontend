@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice"; // ✅ adjust path based on your folder
+
 import {
   FaEye,
   FaEyeSlash,
@@ -21,14 +23,17 @@ function SignIn() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
+
+    // Clear field-specific error
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -37,6 +42,7 @@ function SignIn() {
     }
   };
 
+  // ✅ Validate form before submitting
   const validateForm = () => {
     const newErrors = {};
 
@@ -54,6 +60,7 @@ function SignIn() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ✅ Google sign-in handler
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
@@ -63,7 +70,6 @@ function SignIn() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Send Google user data to backend
       const response = await axios.post(
         "http://localhost:3000/api/auth/google",
         {
@@ -80,46 +86,37 @@ function SignIn() {
         }
       );
 
+      // ✅ Dispatch user data after receiving response
+      dispatch(setUserData(response.data.user));
+
       console.log("Google signin success:", response.data);
       alert("Welcome! You have been signed in successfully with Google.");
 
-      // Navigate to homepage
       navigate("/");
     } catch (error) {
       console.error("Google signin error:", error);
-      
+
       if (error.code === "auth/popup-blocked") {
-        setErrors((prev) => ({
-          ...prev,
-          api: "Popup was blocked. Please allow popups for this site and try again.",
-        }));
+        setErrors({ api: "Popup was blocked. Please allow popups and try again." });
       } else if (error.code === "auth/popup-closed-by-user") {
-        setErrors((prev) => ({
-          ...prev,
-          api: "Sign-in was cancelled. Please try again.",
-        }));
+        setErrors({ api: "Sign-in was cancelled. Please try again." });
       } else if (error.response) {
-        setErrors((prev) => ({
-          ...prev,
-          api: error.response.data.message || "Google signin failed",
-        }));
+        setErrors({ api: error.response.data.message || "Google signin failed" });
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          api: error.message || "An unexpected error occurred",
-        }));
+        setErrors({ api: error.message || "An unexpected error occurred" });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Normal sign-in handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setErrors({}); // Clear previous errors
+    setErrors({});
 
     try {
       const response = await axios.post(
@@ -136,45 +133,32 @@ function SignIn() {
         }
       );
 
-      // Success - user signed in successfully
       console.log("Signin success:", response.data);
       alert("Welcome back! You have been signed in successfully.");
 
-      // Reset form
-      setFormData({
-        email: "",
-        password: "",
-      });
+      // ✅ Dispatch user data
+      dispatch(setUserData(response.data.user));
 
-      // Navigate to homepage
+      // Reset form
+      setFormData({ email: "", password: "" });
+
       navigate("/");
     } catch (error) {
       console.error("Signin error:", error);
 
       if (error.response) {
-        // Server responded with error status
-        setErrors((prev) => ({
-          ...prev,
-          api: error.response.data.message || "Signin failed",
-        }));
+        setErrors({ api: error.response.data.message || "Signin failed" });
       } else if (error.request) {
-        // Network error
-        setErrors((prev) => ({
-          ...prev,
-          api: "Network error. Please check your connection.",
-        }));
+        setErrors({ api: "Network error. Please check your connection." });
       } else {
-        // Other error
-        setErrors((prev) => ({
-          ...prev,
-          api: error.message || "An unexpected error occurred",
-        }));
+        setErrors({ api: error.message || "An unexpected error occurred" });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ UI
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center p-2">
       <div className="w-full max-w-md mx-auto px-4 sm:px-6 md:px-0">
@@ -258,7 +242,7 @@ function SignIn() {
               )}
             </div>
 
-            {/* Forgot Password Link */}
+            {/* Forgot Password */}
             <div className="text-right">
               <Link
                 to="/forgot-password"
@@ -268,7 +252,7 @@ function SignIn() {
               </Link>
             </div>
 
-            {/* Submit Button */}
+            {/* Sign In button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -281,7 +265,7 @@ function SignIn() {
               {isLoading ? "Signing In..." : "Sign In"}
             </button>
 
-            {/* Sign up with Google */}
+            {/* Google Sign In */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -300,7 +284,7 @@ function SignIn() {
               </p>
             )}
 
-            {/* Signup Link */}
+            {/* Signup link */}
             <div className="text-center">
               <p className="text-gray-600">
                 Don't have an account?{" "}

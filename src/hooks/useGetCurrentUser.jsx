@@ -1,7 +1,11 @@
 import React, { useEffect } from "react";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice"; // adjust path as needed
 
 const useGetCurrentUser = () => {
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -11,7 +15,9 @@ const useGetCurrentUser = () => {
             "Content-Type": "application/json",
           },
         });
+
         console.log("Current user fetched:", result.data);
+        dispatch(setUserData(result.data.user)); // ✅ dispatch after getting response
       } catch (error) {
         if (error.response) {
           console.error("Server error:", error.response.data);
@@ -23,8 +29,8 @@ const useGetCurrentUser = () => {
       }
     };
 
-    fetchUser(); 
-  }, []);
+    fetchUser();
+  }, [dispatch]);
 };
 
 export default useGetCurrentUser;
