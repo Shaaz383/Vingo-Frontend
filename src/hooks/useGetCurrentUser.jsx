@@ -1,13 +1,14 @@
 import React, { useEffect } from "react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
-import { setUserData } from "../redux/userSlice"; // adjust path as needed
+import { setUserData, setUserLoading } from "../redux/userSlice"; // adjust path as needed
 
 const useGetCurrentUser = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchUser = async () => {
+      dispatch(setUserLoading(true));
       try {
         const result = await axios.get("http://localhost:3000/api/user/current-user", {
           withCredentials: true,
@@ -26,6 +27,8 @@ const useGetCurrentUser = () => {
         } else {
           console.error("Unexpected error:", error.message);
         }
+        // mark as not loading even on error so routes can render
+        dispatch(setUserLoading(false));
       }
     };
 

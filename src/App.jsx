@@ -9,7 +9,11 @@ import Home from "./pages/Home";
 
 function App() {
   useGetCurrentUser();
-  const { userData } = useSelector((state) => state.user);
+  const { userData, isLoadingUser } = useSelector((state) => state.user);
+
+  if (isLoadingUser) {
+    return null;
+  }
 
   return (
     <Routes>

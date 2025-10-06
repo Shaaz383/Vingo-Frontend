@@ -7,7 +7,10 @@ import { Navigate } from 'react-router-dom'
 import Nav from '../components/Nav'
 
 const Home = () => {
-    const { userData } = useSelector((state) => state.user);
+    const { userData, isLoadingUser } = useSelector((state) => state.user);
+    if(isLoadingUser){
+        return null;
+    }
     if(!userData){
         return <Navigate to="/signin" />
     }
