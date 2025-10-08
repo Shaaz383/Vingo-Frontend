@@ -6,9 +6,13 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
+import useGetCity from "./hooks/useGetCity";
+import useGetMyShop from "./hooks/useGetMyShop";
 
 function App() {
   useGetCurrentUser();
+  useGetCity();
+  useGetMyShop()
   const { userData, isLoadingUser } = useSelector((state) => state.user);
 
   if (isLoadingUser) {
