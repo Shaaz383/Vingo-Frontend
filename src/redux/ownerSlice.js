@@ -4,6 +4,7 @@ const ownerSlice = createSlice({
     name: "owner",
     initialState: {
         myShopData: null,
+        ordersCount: 0,
         
         
     },
@@ -12,8 +13,11 @@ const ownerSlice = createSlice({
             state.myShopData = action.payload;
         
         },
+        setOrdersCount: (state, action) => {
+            state.ordersCount = action.payload;
+        },
       
     },
 })
-export const { setMyShopData} = ownerSlice.actions;
+export const { setMyShopData, setOrdersCount } = ownerSlice.actions;
 export default ownerSlice.reducer; 
