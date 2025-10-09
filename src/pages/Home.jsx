@@ -4,7 +4,7 @@ import OwnerDashboard from '../components/OwnerDashboard'
 import DeliveryBoy from '../components/DeliveryBoy'
 import { useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
-import Nav from '../components/Nav'
+import Nav from '../components/NavComponents/Nav'
 
 const Home = () => {
     const { userData, isLoadingUser } = useSelector((state) => state.user);
