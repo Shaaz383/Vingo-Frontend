@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import useGetCity from "./hooks/useGetCity";
 import useGetMyShop from "./hooks/useGetMyShop";
+import CreateEditShop from "./pages/CreateEditShop";
 
 function App() {
   useGetCurrentUser();
@@ -25,6 +26,7 @@ function App() {
       <Route path="/signin" element={!userData ? <SignIn /> : <Home />} />
       <Route path="/forgot-password" element={!userData ? <ForgotPassword /> : <Home />} />
       <Route path="/" element={userData ? <Home /> : <Navigate to="/signin" />} />
+      <Route path="/create-edit-shop" element={userData ? <CreateEditShop /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }

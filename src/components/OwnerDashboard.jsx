@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FaUtensils } from "react-icons/fa";
+import { useNavigate } from "react-router-dom"; // ✅ Added import
+
 
 // --- Mocking External Hooks for Runnable Example ---
 // NOTE: In your actual app, these should come from 'react-redux' and 'react-router-dom'.
@@ -8,12 +10,7 @@ const useSelector = (selector) => {
   return selector({ owner: { myShopData: null } }); 
 };
 
-const useNavigate = () => {
-  return (path) => {
-    console.log(`Navigation triggered to: ${path}`);
-    // In a real app, this would perform the route change.
-  };
-};
+
 // ----------------------------------------------------
 
 const OwnerDashboard = () => {
@@ -24,10 +21,7 @@ const OwnerDashboard = () => {
   // Determine if a shop has been set up
   const hasShop = myShopData && Object.keys(myShopData).length > 0;
 
-  const handleGetStarted = () => {
-    // Navigate to the restaurant setup page
-    navigate('/owner/add-restaurant'); 
-  };
+  
 
   return (
     <div className="p-4 min-h-screen  bg-gray-50 md:p-8">
@@ -71,7 +65,7 @@ const OwnerDashboard = () => {
             {/* Action Button - Centered */}
             <div className="flex justify-center">
               <button
-                onClick={handleGetStarted}
+                onClick={()=>navigate("/create-edit-shop")}
                 className="w-full py-3 px-4 text-white font-semibold bg-red-600 rounded-lg shadow-xl shadow-red-500/50 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 Get Started
