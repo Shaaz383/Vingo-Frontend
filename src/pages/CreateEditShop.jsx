@@ -115,6 +115,22 @@ const CreateEditShop = () => {
 
           {/* City and State in one row */}
           <div className="grid grid-cols-2 gap-4">
+            {/* State */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                State
+              </label>
+              <input
+                type="text"
+                name="state"
+                placeholder="Enter state"
+                value={formData.state}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+            
             {/* City */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
@@ -131,21 +147,6 @@ const CreateEditShop = () => {
               />
             </div>
 
-            {/* State */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">
-                State
-              </label>
-              <input
-                type="text"
-                name="state"
-                placeholder="Enter state"
-                value={formData.state}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
           </div>
 
           {/* Address */}

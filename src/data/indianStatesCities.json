@@ -1,0 +1,24 @@
+{
+    "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool"],
+    "Arunachal Pradesh": ["Itanagar", "Tawang", "Ziro", "Pasighat"],
+    "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat"],
+    "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia"],
+    "Delhi": ["New Delhi", "Dwarka", "Rohini", "Saket"],
+    "Goa": ["Panaji", "Margao", "Mapusa"],
+    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"],
+    "Haryana": ["Gurgaon", "Faridabad", "Panipat", "Ambala"],
+    "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Hazaribagh"],
+    "Karnataka": ["Bengaluru", "Mysuru", "Mangalore", "Hubli"],
+    "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Thrissur"],
+    "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur"],
+    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane"],
+    "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri"],
+    "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
+    "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem"],
+    "Telangana": ["Hyderabad", "Warangal", "Nizamabad"],
+    "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Prayagraj"],
+    "Uttarakhand": ["Dehradun", "Haridwar", "Rishikesh"],
+    "West Bengal": ["Kolkata", "Siliguri", "Howrah", "Durgapur"]
+  }
+  
