@@ -20,7 +20,8 @@ const useGetCity = () => {
     }
     const data = await response.json();
     const result = Array.isArray(data?.results) ? data.results[0] : data;
-    const locality = result?.city || result?.town || result?.county || result?.state_district || result?.village || result?.suburb;
+    // Prefer finer-grained locality over broad administrative areas
+    const locality = result?.city || result?.town || result?.village || result?.suburb || result?.state_district || result?.county;
     const cityLabel = locality || 'Unknown';
     return cityLabel;
   };

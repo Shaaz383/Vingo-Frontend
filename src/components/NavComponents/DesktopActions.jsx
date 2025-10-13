@@ -12,7 +12,6 @@ const DesktopActions = ({
   ordersCount,
 }) => {
   const handleOwnerOrdersClick = () => handleNavigate('/owner/manage-orders');
-  const handleCreateShopClick = () => handleNavigate('/owner/create-shop');
   const handleUserOrdersClick = () => handleNavigate('/my-orders');
   const handleAddFoodClick = () => handleNavigate('/owner/add-food');
 
@@ -81,16 +80,7 @@ const DesktopActions = ({
         </button>
       )}
 
-      {/* OWNER: Create Shop (Desktop) - SHOW ONLY IF OWNER BUT NO SHOP FOUND */}
-      {isOwner && !hasShop && (
-        <button
-          onClick={handleCreateShopClick}
-          className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
-          <FaStore className="text-sm" />
-          <span>Create Shop</span>
-        </button>
-      )}
+      {/* OWNER: Create Shop (Desktop) - removed as requested */}
 
       {/* USER: My Orders (Desktop) - visible only if NOT owner */}
       {!isOwner && (

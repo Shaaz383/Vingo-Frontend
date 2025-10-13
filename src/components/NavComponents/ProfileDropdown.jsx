@@ -71,15 +71,10 @@ const ProfileDropdown = ({
               {isOwner && (
                 <>
                   <hr className="my-1 border-gray-100" />
-                  {hasShop ? (
+                  {hasShop && (
                     <button onClick={() => navigateAndClose('/owner/dashboard')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors font-medium">
                       <FaStore className="w-4" />
                       <span>Shop Dashboard</span>
-                    </button>
-                  ) : (
-                    <button onClick={() => navigateAndClose('/owner/create-shop')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors font-medium">
-                      <FaStore className="w-4" />
-                      <span>Create Shop</span>
                     </button>
                   )}
                   <hr className="my-1 border-gray-100" />
