@@ -97,4 +97,20 @@ export async function reverseGeocode(lat, lon) {
   throw new Error('Reverse geocoding failed');
 }
 
+// Geoapify reverse geocode using VITE_GEOAPIKEY
+export async function reverseGeocodeGeoapify(lat, lon) {
+  const API_KEY = import.meta.env.VITE_GEOAPIKEY;
+  if (!API_KEY) throw new Error('VITE_GEOAPIKEY is not configured');
+  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&format=json&apiKey=${encodeURIComponent(API_KEY)}`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error('Geoapify reverse geocoding failed');
+  const data = await res.json();
+  const result = Array.isArray(data?.results) ? data.results[0] : data;
+  const city = result?.city || result?.town || result?.village || result?.suburb || result?.state_district || result?.county || null;
+  const state = result?.state || result?.region || null;
+  const pincode = result?.postcode || result?.postal_code || null;
+  const address = result?.formatted || result?.address_line1 || null;
+  return { state, city, pincode, address };
+}
+
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchStates, fetchCitiesByState, reverseGeocode } from '@/services/locationApi';
+import { fetchStates, fetchCitiesByState, reverseGeocodeGeoapify } from '@/services/locationApi';
+import indianStatesCities from '@/data/indianStatesCities.json';
 
 const useIndianLocationsApi = () => {
   const [states, setStates] = useState([]);
@@ -7,19 +8,25 @@ const useIndianLocationsApi = () => {
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [error, setError] = useState(null);
+  const locationApiBase = import.meta.env.VITE_LOCATION_API_BASE;
 
   const loadStates = useCallback(async () => {
     try {
       setError(null);
       setLoadingStates(true);
-      const list = await fetchStates('IN');
-      setStates(list);
+      if (locationApiBase) {
+        const list = await fetchStates('IN');
+        setStates(list);
+      } else {
+        const list = Object.keys(indianStatesCities || {});
+        setStates(list);
+      }
     } catch (e) {
       setError(e?.message || 'Failed to load states');
     } finally {
       setLoadingStates(false);
     }
-  }, []);
+  }, [locationApiBase]);
 
   const loadCities = useCallback(async (stateName) => {
     if (!stateName) {
@@ -29,14 +36,19 @@ const useIndianLocationsApi = () => {
     try {
       setError(null);
       setLoadingCities(true);
-      const list = await fetchCitiesByState(stateName, 'IN');
-      setCities(list);
+      if (locationApiBase) {
+        const list = await fetchCitiesByState(stateName, 'IN');
+        setCities(list);
+      } else {
+        const list = indianStatesCities?.[stateName] || [];
+        setCities(list);
+      }
     } catch (e) {
       setError(e?.message || 'Failed to load cities');
     } finally {
       setLoadingCities(false);
     }
-  }, []);
+  }, [locationApiBase]);
 
   const detectFromCurrentLocation = useCallback(async () => {
     if (!('geolocation' in navigator)) {
@@ -46,7 +58,7 @@ const useIndianLocationsApi = () => {
       navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
     });
     const { latitude, longitude } = position.coords;
-    return await reverseGeocode(latitude, longitude);
+    return await reverseGeocodeGeoapify(latitude, longitude);
   }, []);
 
   useEffect(() => {

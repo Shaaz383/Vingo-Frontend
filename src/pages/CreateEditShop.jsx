@@ -22,6 +22,46 @@ const CreateEditShop = () => {
   });
 
   const { states, cities, loadingStates, loadingCities, error, loadCities, detectFromCurrentLocation } = useIndianLocationsApi();
+  const [detectedLocation, setDetectedLocation] = useState({ state: '', city: '' });
+
+  const normalize = (s) => (s || '').toString().trim().toLowerCase();
+  const findBestMatch = (target, options) => {
+    if (!target) return '';
+    const t = normalize(target);
+    // exact match
+    const exact = options.find(o => normalize(o) === t);
+    if (exact) return exact;
+    // startsWith / includes
+    const starts = options.find(o => normalize(o).startsWith(t) || t.startsWith(normalize(o)));
+    if (starts) return starts;
+    const incl = options.find(o => normalize(o).includes(t) || t.includes(normalize(o)));
+    if (incl) return incl;
+    return '';
+  };
+
+  // Auto-detect and fill on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const detected = await detectFromCurrentLocation();
+        const nextState = detected.state || '';
+        setDetectedLocation({ state: detected.state || '', city: detected.city || '' });
+        setFormData(prev => ({
+          ...prev,
+          state: nextState,
+          city: detected.city || '',
+          pincode: detected.pincode || prev.pincode,
+          address: detected.address || prev.address,
+        }));
+        if (nextState) {
+          await loadCities(nextState);
+        }
+      } catch (_) {
+        // ignore if user denies or fails; manual selection remains
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load cities whenever state changes
   useEffect(() => {
@@ -32,6 +72,27 @@ const CreateEditShop = () => {
       setFormData(prev => ({ ...prev, city: '' }));
     }
   }, [formData.state, loadCities]);
+
+  // When states list loads, align detected state to available options
+  useEffect(() => {
+    if (states.length && detectedLocation.state) {
+      const matchedState = findBestMatch(detectedLocation.state, states);
+      if (matchedState && matchedState !== formData.state) {
+        setFormData(prev => ({ ...prev, state: matchedState, city: '' }));
+        loadCities(matchedState);
+      }
+    }
+  }, [states, detectedLocation.state, loadCities]);
+
+  // When cities list loads, align detected city to available options
+  useEffect(() => {
+    if (cities.length && detectedLocation.city) {
+      const matchedCity = findBestMatch(detectedLocation.city, cities);
+      if (matchedCity && matchedCity !== formData.city) {
+        setFormData(prev => ({ ...prev, city: matchedCity }));
+      }
+    }
+  }, [cities, detectedLocation.city]);
 
   // Handle change in text inputs
   const handleChange = (e) => {
@@ -174,6 +235,9 @@ const CreateEditShop = () => {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
               >
                 <option value="" disabled>{loadingStates ? 'Loading states...' : 'Select state'}</option>
+                {states.length === 0 && formData.state && (
+                  <option value={formData.state}>{formData.state}</option>
+                )}
                 {states.map((st) => (
                   <option key={st} value={st}>{st}</option>
                 ))}
@@ -194,6 +258,9 @@ const CreateEditShop = () => {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white disabled:bg-gray-100 disabled:text-gray-500"
               >
                 <option value="" disabled>{loadingCities ? 'Loading cities...' : (formData.state ? 'Select city' : 'Select state first')}</option>
+                {cities.length === 0 && formData.city && (
+                  <option value={formData.city}>{formData.city}</option>
+                )}
                 {cities.map((ct) => (
                   <option key={ct} value={ct}>{ct}</option>
                 ))}
