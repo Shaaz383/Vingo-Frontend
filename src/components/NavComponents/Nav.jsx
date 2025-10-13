@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useToast } from '@/context/ToastContext.jsx';
 import { 
   FaSearch, 
   FaShoppingCart, 
@@ -57,6 +58,7 @@ const Nav = () => {
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // Refs for click-outside logic
   const profileRef = useRef(null);
@@ -109,8 +111,9 @@ const Nav = () => {
       await axios.get('http://localhost:3000/api/auth/signout', {
         withCredentials: true
       });
+      toast.show('Signed out', 'success');
     } catch (error) {
-      console.error('Logout error:', error);
+      toast.show('Failed to sign out. Please try again.', 'error');
     } finally {
       dispatch(setUserData(null));
       navigate('/signin');

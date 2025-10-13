@@ -3,10 +3,12 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaUtensils, FaCamera } from 'react-icons/fa';
 import useIndianLocationsApi from '@/hooks/useIndianLocationsApi';
+import { useToast } from '@/context/ToastContext.jsx';
 
 const CreateEditShop = () => {
   const navigate = useNavigate();
   const { myShopData } = useSelector(state => state.owner);
+  const toast = useToast();
 
   // Check if owner already has a shop
   const isEdit = myShopData && Object.keys(myShopData).length > 0;
@@ -22,7 +24,6 @@ const CreateEditShop = () => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const { states, cities, loadingStates, loadingCities, error, loadCities, detectFromCurrentLocation } = useIndianLocationsApi();
   const [detectedLocation, setDetectedLocation] = useState({ state: '', city: '' });
@@ -141,13 +142,11 @@ const CreateEditShop = () => {
       }
       const saved = await res.json();
       console.log('Shop saved:', saved);
-      setToast({ show: true, message: 'Shop saved successfully', type: 'success' });
-      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+      toast.show('Shop saved successfully', 'success');
       // navigate('/owner/dashboard');
     } catch (err) {
       console.error(err);
-      setToast({ show: true, message: err?.message || 'Failed to save shop', type: 'error' });
-      setTimeout(() => setToast({ show: false, message: '', type: 'error' }), 3000);
+      toast.show(err?.message || 'Failed to save shop', 'error');
     } finally {
       setSaving(false);
     }
@@ -352,11 +351,7 @@ const CreateEditShop = () => {
           </button>
         </form>
       </div>
-      {toast.show && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-          {toast.message}
-        </div>
-      )}
+      {/* Toast handled globally */}
     </div>
   );
 };
