@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaUtensils, FaCamera } from 'react-icons/fa';
+import useIndianLocations from '@/hooks/useIndianLocations';
 
 const CreateEditShop = () => {
   const navigate = useNavigate();
@@ -16,8 +17,19 @@ const CreateEditShop = () => {
     address: myShopData?.address || '',
     city: myShopData?.city || '',
     state: myShopData?.state || '',
+    pincode: myShopData?.pincode || '',
     image: myShopData?.image || null,
   });
+
+  const { states, cities, loading, fetchCities } = useIndianLocations();
+
+  // Load cities if editing and state is already set
+  useEffect(() => {
+    if (formData.state) {
+      fetchCities(formData.state);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.state]);
 
   // Handle change in text inputs
   const handleChange = (e) => {
@@ -113,40 +125,67 @@ const CreateEditShop = () => {
             </div>
           </div>
 
-          {/* City and State in one row */}
+          {/* State and City in one row */}
           <div className="grid grid-cols-2 gap-4">
             {/* State */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 State
               </label>
-              <input
-                type="text"
+              <select
                 name="state"
-                placeholder="Enter state"
                 value={formData.state}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const selectedState = e.target.value;
+                  setFormData(prev => ({ ...prev, state: selectedState, city: '' }));
+                  if (selectedState) fetchCities(selectedState);
+                }}
                 required
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+              >
+                <option value="" disabled>Select state</option>
+                {states.map((st) => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
+              </select>
             </div>
-            
+
             {/* City */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 City
               </label>
-              <input
-                type="text"
+              <select
                 name="city"
-                placeholder="Enter city"
                 value={formData.city}
-                onChange={handleChange}
+                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                 required
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
+                disabled={!formData.state || loading}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white disabled:bg-gray-100 disabled:text-gray-500"
+              >
+                <option value="" disabled>{loading ? 'Loading cities...' : (formData.state ? 'Select city' : 'Select state first')}</option>
+                {cities.map((ct) => (
+                  <option key={ct} value={ct}>{ct}</option>
+                ))}
+              </select>
             </div>
+          </div>
 
+          {/* Pincode */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Pincode
+            </label>
+            <input
+              type="text"
+              name="pincode"
+              placeholder="Enter pincode"
+              value={formData.pincode}
+              onChange={handleChange}
+              required
+              maxLength="6"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
           </div>
 
           {/* Address */}
