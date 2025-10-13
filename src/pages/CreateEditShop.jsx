@@ -20,6 +20,7 @@ const CreateEditShop = () => {
     pincode: myShopData?.pincode || '',
     image: myShopData?.image || null,
   });
+  const [imageFile, setImageFile] = useState(null);
 
   const { states, cities, loadingStates, loadingCities, error, loadCities, detectFromCurrentLocation } = useIndianLocationsApi();
   const [detectedLocation, setDetectedLocation] = useState({ state: '', city: '' });
@@ -104,6 +105,7 @@ const CreateEditShop = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       setFormData(prev => ({
         ...prev,
         image: URL.createObjectURL(file),
@@ -112,11 +114,35 @@ const CreateEditShop = () => {
   };
 
   // Handle Save button
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    console.log('Saved Shop Data:', formData);
-    // TODO: Add API call for create/edit shop
-    // navigate('/owner/dashboard');
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+      const fd = new FormData();
+      fd.append('name', formData.name);
+      fd.append('address', formData.address);
+      fd.append('city', formData.city);
+      fd.append('state', formData.state);
+      fd.append('pincode', formData.pincode);
+      if (imageFile) {
+        fd.append('image', imageFile);
+      }
+      const res = await fetch(`${apiBase}/api/shop/create-edit`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message || 'Failed to save shop');
+      }
+      const saved = await res.json();
+      console.log('Shop saved:', saved);
+      // navigate('/owner/dashboard');
+    } catch (err) {
+      console.error(err);
+      // Optionally show toast
+    }
   };
 
   return (
