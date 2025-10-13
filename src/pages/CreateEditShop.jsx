@@ -21,6 +21,8 @@ const CreateEditShop = () => {
     image: myShopData?.image || null,
   });
   const [imageFile, setImageFile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const { states, cities, loadingStates, loadingCities, error, loadCities, detectFromCurrentLocation } = useIndianLocationsApi();
   const [detectedLocation, setDetectedLocation] = useState({ state: '', city: '' });
@@ -117,6 +119,7 @@ const CreateEditShop = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
+      setSaving(true);
       const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
       const fd = new FormData();
       fd.append('name', formData.name);
@@ -138,10 +141,15 @@ const CreateEditShop = () => {
       }
       const saved = await res.json();
       console.log('Shop saved:', saved);
+      setToast({ show: true, message: 'Shop saved successfully', type: 'success' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
       // navigate('/owner/dashboard');
     } catch (err) {
       console.error(err);
-      // Optionally show toast
+      setToast({ show: true, message: err?.message || 'Failed to save shop', type: 'error' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'error' }), 3000);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -171,7 +179,7 @@ const CreateEditShop = () => {
         </h1>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="space-y-5">
+        <form onSubmit={handleSave} className="space-y-5" style={{ opacity: saving ? 0.85 : 1 }}>
           {/* Shop Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -202,6 +210,7 @@ const CreateEditShop = () => {
                   accept="image/*"
                   className="hidden"
                   onChange={handleImageChange}
+                  disabled={saving}
                 />
               </label>
               {formData.image && (
@@ -259,6 +268,7 @@ const CreateEditShop = () => {
                 }}
                 required
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                disabled={saving}
               >
                 <option value="" disabled>{loadingStates ? 'Loading states...' : 'Select state'}</option>
                 {states.length === 0 && formData.state && (
@@ -280,7 +290,7 @@ const CreateEditShop = () => {
                 value={formData.city}
                 onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                 required
-                disabled={!formData.state || loadingCities}
+                disabled={!formData.state || loadingCities || saving}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white disabled:bg-gray-100 disabled:text-gray-500"
               >
                 <option value="" disabled>{loadingCities ? 'Loading cities...' : (formData.state ? 'Select city' : 'Select state first')}</option>
@@ -312,6 +322,7 @@ const CreateEditShop = () => {
               required
               maxLength="6"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+              disabled={saving}
             />
           </div>
 
@@ -327,18 +338,25 @@ const CreateEditShop = () => {
               onChange={handleChange}
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-3 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+              disabled={saving}
             />
           </div>
 
           {/* Save Button */}
           <button
             type="submit"
-            className="w-full bg-red-600 text-white font-semibold py-3 rounded-lg hover:bg-red-700 transition cursor-pointer shadow-md"
+            className="w-full bg-red-600 text-white font-semibold py-3 rounded-lg hover:bg-red-700 transition cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={saving}
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </form>
       </div>
+      {toast.show && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };
