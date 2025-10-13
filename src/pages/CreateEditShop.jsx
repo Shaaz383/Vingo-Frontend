@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaUtensils, FaCamera } from 'react-icons/fa';
-import useIndianLocations from '@/hooks/useIndianLocations';
+import useIndianLocationsApi from '@/hooks/useIndianLocationsApi';
 
 const CreateEditShop = () => {
   const navigate = useNavigate();
@@ -21,15 +21,17 @@ const CreateEditShop = () => {
     image: myShopData?.image || null,
   });
 
-  const { states, cities, loading, fetchCities } = useIndianLocations();
+  const { states, cities, loadingStates, loadingCities, error, loadCities, detectFromCurrentLocation } = useIndianLocationsApi();
 
-  // Load cities if editing and state is already set
+  // Load cities whenever state changes
   useEffect(() => {
     if (formData.state) {
-      fetchCities(formData.state);
+      loadCities(formData.state);
+    } else {
+      // ensure city is cleared if no state
+      setFormData(prev => ({ ...prev, city: '' }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.state]);
+  }, [formData.state, loadCities]);
 
   // Handle change in text inputs
   const handleChange = (e) => {
@@ -53,7 +55,7 @@ const CreateEditShop = () => {
     e.preventDefault();
     console.log('Saved Shop Data:', formData);
     // TODO: Add API call for create/edit shop
-    navigate('/owner/dashboard');
+    // navigate('/owner/dashboard');
   };
 
   return (
@@ -125,6 +127,34 @@ const CreateEditShop = () => {
             </div>
           </div>
 
+          {/* Quick action: Use current location */}
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const result = await detectFromCurrentLocation();
+                  const nextState = result.state || '';
+                  setFormData(prev => ({
+                    ...prev,
+                    state: nextState,
+                    city: result.city || '',
+                    pincode: result.pincode || prev.pincode,
+                    address: result.address || prev.address,
+                  }));
+                  if (nextState) {
+                    await loadCities(nextState);
+                  }
+                } catch (e) {
+                  // noop; could add a toast if available
+                }
+              }}
+              className="text-sm text-red-600 hover:text-red-700 underline"
+            >
+              Use current location
+            </button>
+          </div>
+
           {/* State and City in one row */}
           <div className="grid grid-cols-2 gap-4">
             {/* State */}
@@ -138,12 +168,12 @@ const CreateEditShop = () => {
                 onChange={(e) => {
                   const selectedState = e.target.value;
                   setFormData(prev => ({ ...prev, state: selectedState, city: '' }));
-                  if (selectedState) fetchCities(selectedState);
+                  if (selectedState) loadCities(selectedState);
                 }}
                 required
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
               >
-                <option value="" disabled>Select state</option>
+                <option value="" disabled>{loadingStates ? 'Loading states...' : 'Select state'}</option>
                 {states.map((st) => (
                   <option key={st} value={st}>{st}</option>
                 ))}
@@ -160,16 +190,20 @@ const CreateEditShop = () => {
                 value={formData.city}
                 onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                 required
-                disabled={!formData.state || loading}
+                disabled={!formData.state || loadingCities}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white disabled:bg-gray-100 disabled:text-gray-500"
               >
-                <option value="" disabled>{loading ? 'Loading cities...' : (formData.state ? 'Select city' : 'Select state first')}</option>
+                <option value="" disabled>{loadingCities ? 'Loading cities...' : (formData.state ? 'Select city' : 'Select state first')}</option>
                 {cities.map((ct) => (
                   <option key={ct} value={ct}>{ct}</option>
                 ))}
               </select>
             </div>
           </div>
+
+          {error && (
+            <div className="text-sm text-red-600">{error}</div>
+          )}
 
           {/* Pincode */}
           <div>

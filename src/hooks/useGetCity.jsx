@@ -2,33 +2,40 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { setCity } from '../redux/userSlice'
 
-// Detect user city via browser geolocation and reverse geocoding (OpenStreetMap Nominatim)
+// Detect user city via browser geolocation and reverse geocoding (Geoapify)
 const useGetCity = () => {
   const dispatch = useDispatch();
   const [detectedCity, setDetectedCity] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const inFlightRef = useRef(false);
+  const apiKey = import.meta.env.VITE_GEOAPIKEY;
 
   const reverseGeocode = async (latitude, longitude) => {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`;
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'VingoApp/1.0 (contact@example.com)'
-      }
-    });
+    if (!apiKey) throw new Error('VITE_GEOAPIKEY is not configured');
+    const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&format=json&apiKey=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!response.ok) {
       throw new Error('Reverse geocoding failed');
     }
     const data = await response.json();
-    const address = data?.address || {};
-    // Prefer only the city/locality name; no state or country in label
-    const locality = address.city || address.town || address.village || address.suburb || address.county;
-    const state = address.state;
-    const country = address.country;
+    const result = Array.isArray(data?.results) ? data.results[0] : data;
+    const locality = result?.city || result?.town || result?.county || result?.state_district || result?.village || result?.suburb;
     const cityLabel = locality || 'Unknown';
-    return { label: cityLabel, meta: { locality, state, country } };
+    return cityLabel;
+  };
+
+  const detectByIp = async () => {
+    if (!apiKey) throw new Error('VITE_GEOAPIKEY is not configured');
+    const url = `https://api.geoapify.com/v1/ipinfo?apiKey=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) {
+      throw new Error('IP geolocation failed');
+    }
+    const data = await response.json();
+    // Normalize likely shapes
+    const label = data?.city?.name || data?.city || data?.location?.city?.name || data?.location?.city || 'Unknown';
+    return label;
   };
 
   const requestCity = useCallback(() => {
@@ -45,21 +52,34 @@ const useGetCity = () => {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
         const { latitude, longitude } = pos.coords;
-        const result = await reverseGeocode(latitude, longitude);
-        setDetectedCity(result.label);
-        dispatch(setCity(result.label));
+        const label = await reverseGeocode(latitude, longitude);
+        setDetectedCity(label);
+        dispatch(setCity(label));
       } catch (e) {
-        setError(e?.message || 'Failed to detect city');
+        try {
+          const label = await detectByIp();
+          setDetectedCity(label);
+          dispatch(setCity(label));
+        } catch (fallbackErr) {
+          setError(fallbackErr?.message || e?.message || 'Failed to detect city');
+        }
       } finally {
         setLoading(false);
         inFlightRef.current = false;
       }
-    }, (geoError) => {
-      setError(geoError?.message || 'Location permission denied');
-      setLoading(false);
-      inFlightRef.current = false;
+    }, async (geoError) => {
+      try {
+        const label = await detectByIp();
+        setDetectedCity(label);
+        dispatch(setCity(label));
+      } catch (fallbackErr) {
+        setError(geoError?.message || fallbackErr?.message || 'Location permission denied');
+      } finally {
+        setLoading(false);
+        inFlightRef.current = false;
+      }
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
-  }, [dispatch]);
+  }, [dispatch, apiKey]);
 
   useEffect(() => {
     requestCity();
