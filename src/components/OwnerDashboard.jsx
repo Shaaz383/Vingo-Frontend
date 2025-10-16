@@ -7,14 +7,8 @@ import React from 'react';
 // ✅ Import the new component
 import SetupShopCard  from './OwnerComponents/SetupShopCard';
 
-// --- Mocking External Hooks for Runnable Example ---
-// NOTE: In your actual app, this should come from 'react-redux'.
-// This mock assumes 'myShopData' is null, which triggers the display of the setup card.
-const useSelector = (selector) => {
-  // Keeping the mock simple for demonstration
-  return selector({ owner: { myShopData: null } });   
-};
-// ----------------------------------------------------
+// Import useSelector from react-redux
+import { useSelector } from 'react-redux';
 
 const OwnerDashboard = () => {
   // Destructure myShopData from the mocked state
@@ -33,14 +27,12 @@ const OwnerDashboard = () => {
         {/* Placeholder for other header elements */}
       </div>
 
-      {/* 🚀 Conditional Rendering for the Setup Card (now a single component) */}
-      {!hasShop && (
-        <SetupShopCard />
-      )}
+      {/* Always render SetupShopCard but pass myShopData to show appropriate content */}
+      <SetupShopCard myShopData={myShopData} />
 
-      {/* Placeholder for when the shop IS present */}
+      {/* Additional dashboard content when shop is present */}
       {hasShop && (
-        <div className="text-center p-10 bg-white rounded-xl shadow-lg">
+        <div className="mt-8 text-center p-10 bg-white rounded-xl shadow-lg">
           <p className="text-lg font-medium text-gray-700">Your restaurant profile is active and ready to go!</p>
           {/* Regular dashboard content goes here */}
         </div>
