@@ -174,8 +174,13 @@ const MobileMenu = ({
           </button>
 
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleLogout();
+            }}
+            type="button"
+            className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 active:bg-red-100"
           >
             <FaSignOutAlt className="text-red-500 h-5 w-5" />
             <span className="text-sm font-medium">Logout</span>

@@ -74,38 +74,44 @@ const Nav = () => {
 
   // --- Handlers & Effects ---
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Logic for closing the Profile Dropdown
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
-      }
-      // Logic for closing the City Selector (desktop and mobile versions)
-      if (
-        (cityRef.current && !cityRef.current.contains(event.target)) &&
-        (cityRefMobile.current && !cityRefMobile.current.contains(event.target))
-      ) {
-        setIsCitySelectorOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  // Optimize handleClickOutside with useCallback
+  const handleClickOutside = useCallback((event) => {
+    if (profileRef.current && !profileRef.current.contains(event.target)) {
+      setIsProfileOpen(false);
+    }
+    if (
+      (cityRef.current && !cityRef.current.contains(event.target)) &&
+      (cityRefMobile.current && !cityRefMobile.current.contains(event.target))
+    ) {
+      setIsCitySelectorOpen(false);
+    }
   }, []);
 
-  // Sync detected city into UI/Redux
+  // Update useEffect to use the memoized handleClickOutside
   useEffect(() => {
-    if (city) {
-      setLocation(city);
-      return;
-    }
-    if (detectedCity) {
-      setLocation(detectedCity);
-      dispatch(setCity(detectedCity));
-    }
-  }, [detectedCity, dispatch, city]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClickOutside]);
 
+  // Optimize toggle functions with useCallback
+  const toggleProfile = useCallback(() => {
+    setIsProfileOpen(prev => !prev);
+  }, []);
 
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const toggleCitySelector = useCallback(() => {
+    setIsCitySelectorOpen(prev => !prev);
+  }, []);
+
+  // Optimize handleCitySearchChange with useCallback
+  const handleCitySearchChange = useCallback((e) => {
+    setCitySearch(e.target.value);
+  }, []);
+
+  // Add toast to handleLogout dependencies
   const handleLogout = useCallback(async () => {
     try {
       await axios.get('http://localhost:3000/api/auth/signout', {
@@ -120,17 +126,17 @@ const Nav = () => {
       setIsProfileOpen(false); 
       setIsMobileMenuOpen(false); 
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, toast]);
 
+  // Add setSearchQuery and setIsMobileMenuOpen to handleSearch dependencies
   const handleSearch = useCallback((e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${searchQuery}&city=${city || location}`);
       setSearchQuery('');
-      // Close mobile menu after search
       setIsMobileMenuOpen(false);
     }
-  }, [searchQuery, navigate, city, location]);
+  }, [searchQuery, navigate, city, location, setSearchQuery, setIsMobileMenuOpen]);
   
   // Helper for all internal navigation, closes mobile menu
   const handleNavigate = useCallback((path) => {
@@ -140,18 +146,19 @@ const Nav = () => {
   }, [navigate]);
     
   // Toggle functions
-  const toggleProfile = () => setIsProfileOpen((prev) => !prev);
-  const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
-  const toggleCitySelector = () => setIsCitySelectorOpen((prev) => !prev);
-  
+  // Remove these duplicate declarations since they're already defined with useCallback above
+  // Delete these lines:
+  // const toggleProfile = () => setIsProfileOpen((prev) => !prev);
+  // const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
+  // const toggleCitySelector = () => setIsCitySelectorOpen((prev) => !prev);
+  // const handleCitySearchChange = (e) => setCitySearch(e.target.value);
+
   const handleCitySelect = useCallback((selectedCity) => {
     dispatch(setCity(selectedCity));
     setLocation(selectedCity);
     setCitySearch('');
     setIsCitySelectorOpen(false);
   }, [dispatch]);
-
-  const handleCitySearchChange = (e) => setCitySearch(e.target.value);
 
 
   // --- Render ---
@@ -233,6 +240,7 @@ const Nav = () => {
           handleNavigate={handleNavigate}
           cartCount={CART_COUNT_STATIC}
           ordersCount={ORDERS_COUNT_STATIC}
+          handleLogout={handleLogout}  // Add this line
           // Props for Mobile City Selector
           cityRefMobile={cityRefMobile}
           isCitySelectorOpen={isCitySelectorOpen}
