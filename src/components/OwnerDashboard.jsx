@@ -13,7 +13,7 @@ const OwnerDashboard = () => {
   const hasShop = myShopData && Object.keys(myShopData).length > 0;
   
   // Fetch shop items to determine if we should show AddFoodItemCard
-  const { items, itemCount, loading, error } = useGetShopItems();
+  const { items, itemCount, loading, error, refetch } = useGetShopItems();
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 md:p-8">
@@ -41,7 +41,7 @@ const OwnerDashboard = () => {
             </h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((item) => (
-                <OwnerItemCard key={item._id || item.name} item={item} />
+                <OwnerItemCard key={item._id || item.name} item={item} refetch={refetch} />
               ))}
             </div>
           </div>
