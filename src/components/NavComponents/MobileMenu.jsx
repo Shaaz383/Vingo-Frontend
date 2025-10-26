@@ -129,7 +129,7 @@ const MobileMenu = ({
                 </button>
 
                 <button
-                  onClick={() => handleNavigate("/owner/add-food")}
+                  onClick={() => handleNavigate("/add-food-item")}
                   className="w-full flex items-center space-x-3 p-3 text-gray-700 hover:bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <FaPlus className="text-gray-400 h-5 w-5" />

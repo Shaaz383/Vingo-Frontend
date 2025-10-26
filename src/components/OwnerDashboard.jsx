@@ -3,12 +3,16 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SetupShopCard from "./OwnerComponents/SetupShopCard";
-import AddFoodCard from "./OwnerComponents/AddFoodCard"; // ✅ new import
+import AddFoodItemCard from "./OwnerComponents/AddFoodItemCard";
+import useGetShopItems from "../hooks/useGetShopItems";
 
 const OwnerDashboard = () => {
   const { myShopData } = useSelector((state) => state.owner);
   const navigate = useNavigate();
   const hasShop = myShopData && Object.keys(myShopData).length > 0;
+  
+  // Fetch shop items to determine if we should show AddFoodItemCard
+  const { items, itemCount, loading, error } = useGetShopItems();
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 md:p-8">
@@ -20,10 +24,43 @@ const OwnerDashboard = () => {
       {/* Setup Shop Card */}
       <SetupShopCard myShopData={myShopData} />
 
-      {/* If shop exists, show Add Food Card */}
-      {hasShop && (
+      {/* Show AddFoodItemCard only if shop exists and has no items */}
+      {hasShop && !loading && itemCount === 0 && (
         <div className="mt-8 flex justify-center">
-          <AddFoodCard /> {/* ✅ Clean reusable component */}
+          <AddFoodItemCard />
+        </div>
+      )}
+
+      {/* Show existing items if any */}
+      {hasShop && !loading && itemCount > 0 && (
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Your Food Items ({itemCount})
+            </h2>
+            <p className="text-gray-600">
+              You have {itemCount} food item{itemCount !== 1 ? 's' : ''} in your shop.
+            </p>
+            {/* TODO: Add actual item list component here */}
+          </div>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {hasShop && loading && (
+        <div className="mt-8 flex justify-center">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-gray-600">Loading your food items...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {hasShop && error && (
+        <div className="mt-8 flex justify-center">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-red-600">Error loading food items: {error}</p>
+          </div>
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ const DesktopActions = ({
 }) => {
   const handleOwnerOrdersClick = () => handleNavigate('/owner/manage-orders');
   const handleUserOrdersClick = () => handleNavigate('/my-orders');
-  const handleAddFoodClick = () => handleNavigate('/owner/add-food');
+  const handleAddFoodClick = () => handleNavigate('/add-food-item');
 
   return (
     <>
