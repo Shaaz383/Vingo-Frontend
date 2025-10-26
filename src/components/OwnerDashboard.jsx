@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SetupShopCard from "./OwnerComponents/SetupShopCard";
 import AddFoodItemCard from "./OwnerComponents/AddFoodItemCard";
+import OwnerItemCard from "./OwnerComponents/OwnerItemCard";
 import useGetShopItems from "../hooks/useGetShopItems";
 
 const OwnerDashboard = () => {
@@ -38,10 +39,11 @@ const OwnerDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Your Food Items ({itemCount})
             </h2>
-            <p className="text-gray-600">
-              You have {itemCount} food item{itemCount !== 1 ? 's' : ''} in your shop.
-            </p>
-            {/* TODO: Add actual item list component here */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {items.map((item) => (
+                <OwnerItemCard key={item._id || item.name} item={item} />
+              ))}
+            </div>
           </div>
         </div>
       )}
