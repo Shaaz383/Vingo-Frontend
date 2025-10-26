@@ -1,90 +1,84 @@
-// OwnerComponent/SetupShopCard.jsx
+// OwnerComponents/SetupShopCard.jsx
 
 import React from 'react';
-import { FaUtensils, FaMapMarkerAlt, FaRegClock, FaPencilAlt, FaCheckCircle } from "react-icons/fa";
+import { FaUtensils, FaMapMarkerAlt, FaPencilAlt, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-/**
- * Renders the setup card prompting the owner to register their restaurant.
- * @component
- * @param {Object} myShopData - The shop data if it exists (expected to have name, address, logoUrl, maybe operationHours)
- */
 const SetupShopCard = ({ myShopData }) => {
   const navigate = useNavigate();
   const shopExists = myShopData && myShopData.name;
 
-  // --- Professional Welcome Card for Existing Shop ---
+  // ✅ If shop exists - show professional summary card
   if (shopExists) {
-    const defaultLogoUrl = "https://via.placeholder.com/80/ef4444/ffffff?text=LOGO"; // Placeholder for logo
+    const defaultLogoUrl = "https://via.placeholder.com/100/ef4444/ffffff?text=LOGO";
     const shopLogo = myShopData.image || defaultLogoUrl;
-    
-    // Fallback for address if your data is simple
-    const shopAddress = myShopData.address || "123 Dashboard Avenue, Metropolis"; 
-    
-    // Example operational status (you might replace this with real logic)
-    const operationalStatus = "Active - Receiving Orders"; 
+    const shopAddress = myShopData.address || "123 Dashboard Avenue, Metropolis";
+    const operationalStatus = "Active — Receiving Orders";
 
     return (
-      // Flex container to center the card vertically and horizontally
-      <div className="flex justify-center items-start pt-10 h-full md:items-center">
-        
-        {/* Professional Welcome Card Container - Wider and more prominent */}
-        <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-xl shadow-2xl transition-all duration-300 hover:shadow-3xl transform hover:scale-[1.01] overflow-hidden">
+      <div className="flex justify-center mt-10">
+        <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-transform duration-300 hover:scale-[1.01]">
           
-          {/* Card Header/Banner Area */}
-          <div className="relative h-28 bg-red-600/10 flex items-center p-6 md:h-36">
-            <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 z-10">
-              Welcome Back, <span className="text-red-600">{myShopData.name}</span>
-            </h2>
-            {/* Background pattern/image for effect */}
-            <div className="absolute top-0 right-0 h-full w-40 bg-red-600/5 opacity-50 skew-x-[-20deg] origin-top-right"></div>
-          </div>
-
-          {/* Card Body - Content & Details */}
-          <div className="p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center -mt-10">
-            
-            {/* Logo/Image Section */}
-            <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
-              <img 
-                className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-white shadow-lg"
+          {/* Banner Header */}
+          <div className="h-32 bg-gradient-to-r from-red-600 to-rose-500 relative">
+            <div className="absolute bottom-0 left-6 transform translate-y-1/2">
+              <img
                 src={shopLogo}
                 alt={`${myShopData.name} Logo`}
-                onError={(e) => e.target.src = defaultLogoUrl} // Fallback in case of broken link
+                onError={(e) => (e.target.src = defaultLogoUrl)}
+                className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
               />
             </div>
+            <h2 className="absolute bottom-6 left-36 text-white font-extrabold text-2xl md:text-3xl drop-shadow-md">
+              {myShopData.name}
+            </h2>
+          </div>
 
-            {/* Restaurant Info & Status */}
-            <div className="flex-grow">
-              <div className="text-lg font-semibold text-gray-800 flex items-center mb-1">
-                <FaCheckCircle className="w-4 h-4 text-green-500 mr-2"/>
-                <span className="text-green-600">{operationalStatus}</span>
+          {/* Content Section */}
+          <div className="p-8 mt-6 md:flex md:items-center md:justify-between">
+            
+            {/* Info Section */}
+            <div>
+              {/* Status */}
+              <div className="flex items-center text-green-600 font-semibold mb-3">
+                <FaCheckCircle className="w-5 h-5 mr-2" />
+                <span>{operationalStatus}</span>
               </div>
 
               {/* Address */}
-              <p className="text-sm text-gray-500 flex items-start mb-3">
-                <FaMapMarkerAlt className="w-4 h-4 text-red-400 mr-2 mt-1 flex-shrink-0"/>
-                {shopAddress}
-              </p>
+              <div className="flex items-start text-gray-600 text-sm mb-5">
+                <FaMapMarkerAlt className="w-4 h-4 mt-1 mr-2 text-red-400" />
+                <span>{shopAddress}</span>
+              </div>
 
-              {/* Action Button - Placed next to info for better flow on desktop */}
+              {/* Edit Button */}
               <button
                 onClick={() => navigate("/create-edit-shop")}
-                className="flex items-center justify-center py-2 px-4 text-sm text-red-600 font-semibold border border-red-600 rounded-lg hover:bg-red-50 transition duration-150 ease-in-out"
+                className="flex items-center bg-gradient-to-r from-red-600 to-rose-500 text-white px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
               >
                 <FaPencilAlt className="w-4 h-4 mr-2" />
-                Edit Restaurant Profile
+                Edit Shop Details
               </button>
             </div>
-            
+
+            {/* Right Section - Preview Info */}
+            <div className="mt-6 md:mt-0 bg-gray-50 border border-gray-100 p-5 rounded-xl text-center shadow-sm">
+              <h3 className="text-sm text-gray-500 font-medium mb-2">Shop ID</h3>
+              <p className="text-lg font-semibold text-gray-800 mb-3">#{myShopData._id || "SHP-00123"}</p>
+              {/* <p className="text-xs text-gray-500 italic">All systems running smoothly 🚀</p> */}
+            </div>
+
           </div>
-          
-          {/* Footer - Quick Actions & Description */}
-          <div className="bg-gray-50 border-t border-gray-100 p-6 md:p-8 flex justify-between items-center">
-            <p className="text-sm text-gray-600">
-              Your dashboard is ready. Time to check today's orders!
-            </p>
-            {/* You can add a quick link to the menu or orders page here */}
-            {/* Example: <a href="/menu" className="text-red-600 font-medium hover:text-red-700">Manage Menu &rarr;</a> */}
+
+          {/* Footer Bar */}
+          <div className="bg-gray-50 border-t border-gray-100 px-8 py-4 flex justify-between items-center text-sm text-gray-500">
+            <span>Keep your shop info updated for better visibility.</span>
+            <button
+              onClick={() => navigate("/owner/orders")}
+              className="text-red-600 font-semibold hover:text-red-700 transition-colors"
+            >
+              View Orders →
+            </button>
           </div>
 
         </div>
@@ -92,46 +86,37 @@ const SetupShopCard = ({ myShopData }) => {
     );
   }
 
-  // --- Original "Setup Shop" Card (If no shop exists) ---
+  // ❌ If no shop exists - show setup prompt card
   return (
-    // Flex container to center the card vertically and horizontally
-    <div className="flex justify-center items-start pt-10 h-full md:items-center">
-      
-      {/* Main Card Container */}
-      <div className="w-full max-w-sm p-8 bg-white border border-gray-200 rounded-xl shadow-2xl transition-all duration-300 hover:shadow-3xl transform hover:-translate-y-1">
+    <div className="flex justify-center mt-10">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 text-center transition-transform hover:scale-[1.01] hover:shadow-3xl">
         
-        {/* Icon - Centered */}
+        {/* Icon */}
         <div className="flex justify-center mb-6">
-          <div className="p-4 bg-red-600 rounded-full shadow-lg shadow-red-300/50">
-            <FaUtensils className="w-10 h-10 text-white" />
+          <div className="p-4 bg-gradient-to-r from-red-600 to-rose-500 rounded-full shadow-lg">
+            <FaUtensils className="text-white w-10 h-10" />
           </div>
         </div>
 
-        {/* Title - Centered */}
-        <h2 className="text-center text-3xl font-extrabold text-gray-900 mb-3">
-          {"Add Your Restaurant"}
-        </h2>
-        
-        {/* Description Paragraph */}
-        <p className="text-center text-base text-gray-600 mb-4">
-          {"Get started by registering your food business profile. You're just a few steps away from managing your menu and staff!"}
+        {/* Title */}
+        <h2 className="text-3xl font-bold text-gray-800 mb-3">Add Your Restaurant</h2>
+
+        {/* Description */}
+        <p className="text-gray-600 text-base mb-4">
+          Start by setting up your restaurant profile and showcase your dishes to customers!
         </p>
 
-        {/* Little Description (More detail) */}
-        <p className="text-center text-xs text-gray-400 mb-8 italic">
-          {"A complete profile is required to enable real-time order processing and analytics."}
+        <p className="text-sm text-gray-400 italic mb-8">
+          A verified profile helps customers find and trust your restaurant easily.
         </p>
 
-        {/* Action Button - Centered */}
-        <div className="flex justify-center">
-          <button
-            onClick={() => navigate("/create-edit-shop")}
-            className="w-full py-3 px-4 text-white font-semibold bg-red-600 rounded-lg shadow-xl shadow-red-500/50 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {"Get Started"}
-          </button>
-        </div>
-        
+        {/* Button */}
+        <button
+          onClick={() => navigate("/create-edit-shop")}
+          className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-500 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-200"
+        >
+          Get Started
+        </button>
       </div>
     </div>
   );
