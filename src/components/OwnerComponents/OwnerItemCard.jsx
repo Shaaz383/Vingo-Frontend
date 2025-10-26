@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useToast } from '@/context/ToastContext.jsx';
+import Modal from '@/components/common/Modal.jsx';
 
 const OwnerItemCard = ({ item, refetch }) => {
   const toast = useToast();
@@ -61,7 +62,7 @@ const OwnerItemCard = ({ item, refetch }) => {
       data.append('price', Number(form.price));
       if (imageFile) data.append('image', imageFile);
 
-      const res = await axios.post(`http://localhost:3000/api/item/edit-item/${_id}`, data, {
+      await axios.post(`http://localhost:3000/api/item/edit-item/${_id}`, data, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -138,87 +139,88 @@ const OwnerItemCard = ({ item, refetch }) => {
         )}
       </div>
 
-      {/* Edit Modal */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 border border-gray-100">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Edit Item</h4>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <input
-                  type="text"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Food Type</label>
-                <select
-                  value={form.foodType}
-                  onChange={(e) => setForm({ ...form, foodType: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option>Veg</option>
-                  <option>Non-Veg</option>
-                  <option>Vegan</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className={`px-4 py-2 rounded-lg text-white ${saving ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'} shadow-md`}
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
+      {/* Edit Modal via Portal */}
+      <Modal
+        open={isEditing}
+        onClose={() => setIsEditing(false)}
+        title="Edit Item"
+        footer={(
+          <>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-item-form"
+              disabled={saving}
+              className={`px-4 py-2 rounded-lg text-white ${saving ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'} shadow-md`}
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </>
+        )}
+      >
+        <form id="edit-item-form" onSubmit={handleEditSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+              required
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <input
+              type="text"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Food Type</label>
+            <select
+              value={form.foodType}
+              onChange={(e) => setForm({ ...form, foodType: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+              required
+            >
+              <option>Veg</option>
+              <option>Non-Veg</option>
+              <option>Vegan</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={form.price}
+              onChange={(e) => setForm({ ...form, price: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              className="w-full"
+            />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
