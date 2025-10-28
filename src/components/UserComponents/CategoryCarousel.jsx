@@ -70,7 +70,7 @@ const CategoryCarousel = () => {
     <div className="relative">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Choose Food</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Choose Food Category</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
