@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '@/context/ToastContext.jsx';
+import { selectCartItemCount } from '../../redux/cartSlice';
 import { 
   FaSearch, 
   FaShoppingCart, 
@@ -20,6 +21,7 @@ import {
   FaStore 
 } from 'react-icons/fa';
 import { setUserData, setCity } from '../../redux/userSlice';
+import { selectCartItemCount } from '../../redux/cartSlice';
 import useGetCity from '../../hooks/useGetCity';
 
 // Import all new components
@@ -39,8 +41,7 @@ const INDIAN_CITIES = [
   'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Patna', 'Gaya',
   'Bhagalpur', 'Muzaffarpur', 'Purnia'
 ];
-// Example static values (should be replaced with actual Redux/API data.)
-const CART_COUNT_STATIC = 2; 
+// Example static value (should be replaced with actual Redux/API data.)
 const ORDERS_COUNT_STATIC = 3; 
 // --- Main Nav Component ---
 
@@ -54,7 +55,8 @@ const Nav = () => {
   
   const { userData, city } = useSelector((state) => state.user);
   // Assuming the structure is state.owner.myShopData
-  const { myShopData } = useSelector(state => state.owner); 
+  const { myShopData } = useSelector(state => state.owner);
+  const cartItemCount = useSelector(selectCartItemCount); 
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -198,7 +200,7 @@ const Nav = () => {
               setSearchQuery={setSearchQuery}
               handleSearch={handleSearch}
               handleNavigate={handleNavigate}
-              cartCount={CART_COUNT_STATIC}
+              cartCount={cartItemCount}
               ordersCount={ORDERS_COUNT_STATIC}
             />
             

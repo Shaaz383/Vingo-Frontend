@@ -7,16 +7,18 @@ import {
   FaClock, 
   FaStore 
 } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import { selectCartItemCount } from '../../redux/cartSlice';
 
 const MobileIcons = ({
   isOwner,
   hasShop,
   ordersCount,
-  cartCount,
   isMobileMenuOpen,
   toggleMobileMenu,
   handleNavigate
 }) => {
+  const cartCount = useSelector(selectCartItemCount);
   const handleOwnerOrdersClick = () => handleNavigate('/owner/manage-orders');
   const handleCreateShopClick = () => handleNavigate('/owner/create-shop');
   const handleAddFoodClick = () => handleNavigate('/owner/add-food');

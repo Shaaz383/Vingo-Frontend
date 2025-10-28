@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { FaLeaf, FaDrumstickBite, FaStar } from 'react-icons/fa';
+import { useSelector, useDispatch } from 'react-redux';
+import { FaLeaf, FaDrumstickBite, FaStar, FaShoppingCart } from 'react-icons/fa';
 import useItemsByCity from '@/hooks/useItemsByCity.jsx';
+import { addToCart } from '@/redux/cartSlice.js';
+import { useToast } from '@/context/ToastContext.jsx';
 
 // Deterministic pseudo ratings (stable per item)
 const calcGenuineRatings = (key) => {
@@ -27,7 +29,7 @@ const FoodTypeBadge = ({ type }) => {
   );
 };
 
-const ItemCard = ({ item, quantity, onChangeQty }) => {
+const ItemCard = ({ item, quantity, onChangeQty, onAddToCart }) => {
   const placeholder = 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop';
   const img = item?.image || placeholder;
   const ratings = calcGenuineRatings(item?._id || item?.name);
@@ -58,6 +60,18 @@ const ItemCard = ({ item, quantity, onChangeQty }) => {
             <button type="button" onClick={() => onChangeQty(item, quantity + 1)} className="px-3 py-1 rounded-md border bg-white hover:bg-gray-50">+</button>
           </div>
         </div>
+        
+        <button 
+          onClick={() => onAddToCart(item, quantity)}
+          disabled={quantity <= 0}
+          className={`mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-md ${
+            quantity > 0 
+              ? 'bg-red-600 text-white hover:bg-red-700' 
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <FaShoppingCart /> Add to Cart
+        </button>
       </div>
     </div>
   );
@@ -68,6 +82,8 @@ const SuggestedItems = () => {
   const { items, loading, error } = useItemsByCity(city);
   const [filter, setFilter] = useState('All'); // All, Veg, Non-Veg, Vegan
   const [quantities, setQuantities] = useState({});
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   const filteredItems = useMemo(() => {
     if (filter === 'All') return items;
@@ -76,6 +92,24 @@ const SuggestedItems = () => {
 
   const onChangeQty = (item, qty) => {
     setQuantities(prev => ({ ...prev, [item._id || item.name]: qty }));
+  };
+  
+  const onAddToCart = (item, quantity) => {
+    if (quantity <= 0) return;
+    
+    dispatch(addToCart({
+      id: item._id,
+      name: item.name,
+      price: item.price,
+      quantity,
+      image: item.image,
+      foodType: item.foodType,
+      shopId: item.shop?._id,
+      shopName: item.shop?.name || 'Restaurant'
+    }));
+    
+    showToast(`Added ${quantity} ${item.name} to cart`, 'success');
+    setQuantities(prev => ({ ...prev, [item._id || item.name]: 0 }));
   };
 
   return (
@@ -100,7 +134,13 @@ const SuggestedItems = () => {
       {!loading && !error && filteredItems.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map(item => (
-            <ItemCard key={item._id || item.name} item={item} quantity={quantities[item._id || item.name] || 0} onChangeQty={onChangeQty} />
+            <ItemCard 
+              key={item._id || item.name} 
+              item={item} 
+              quantity={quantities[item._id || item.name] || 0} 
+              onChangeQty={onChangeQty}
+              onAddToCart={onAddToCart} 
+            />
           ))}
         </div>
       )}

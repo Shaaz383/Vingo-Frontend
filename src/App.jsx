@@ -10,6 +10,7 @@ import useGetCity from "./hooks/useGetCity";
 import useGetMyShop from "./hooks/useGetMyShop";
 import CreateEditShop from "./pages/CreateEditShop";
 import AddFoodItem from "./components/OwnerComponents/AddFoodItem";
+import Cart from "./pages/Cart";
 
 function App() {
   useGetCurrentUser();
@@ -29,6 +30,7 @@ function App() {
       <Route path="/" element={userData ? <Home /> : <Navigate to="/signin" />} />
       <Route path="/create-edit-shop" element={userData ? <CreateEditShop /> : <Navigate to="/signin" />} />
       <Route path="/add-food-item" element={userData ? <AddFoodItem /> : <Navigate to="/signin" />} />
+      <Route path="/cart" element={userData ? <Cart /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }
