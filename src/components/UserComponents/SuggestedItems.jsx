@@ -83,7 +83,7 @@ const SuggestedItems = () => {
   const [filter, setFilter] = useState('All'); // All, Veg, Non-Veg, Vegan
   const [quantities, setQuantities] = useState({});
   const dispatch = useDispatch();
-  const { showToast } = useToast();
+  const toast = useToast();
 
   const filteredItems = useMemo(() => {
     if (filter === 'All') return items;
@@ -108,7 +108,7 @@ const SuggestedItems = () => {
       shopName: item.shop?.name || 'Restaurant'
     }));
     
-    showToast(`Added ${quantity} ${item.name} to cart`, 'success');
+    toast.show(`Added ${quantity} ${item.name} to cart`, 'success');
     setQuantities(prev => ({ ...prev, [item._id || item.name]: 0 }));
   };
 

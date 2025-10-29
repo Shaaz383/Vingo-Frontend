@@ -68,7 +68,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 const Cart = () => {
   const { items, totalAmount, totalQuantity } = useSelector(state => state.cart);
   const dispatch = useDispatch();
-  const { showToast } = useToast();
+  const toast = useToast();
   
   const handleUpdateQuantity = (itemId, quantity) => {
     dispatch(updateQuantity({ id: itemId, quantity }));
@@ -76,16 +76,16 @@ const Cart = () => {
   
   const handleRemoveItem = (itemId) => {
     dispatch(removeFromCart(itemId));
-    showToast('Item removed from cart', 'success');
+    toast.show('Item removed from cart', 'success');
   };
   
   const handleClearCart = () => {
     dispatch(clearCart());
-    showToast('Cart cleared', 'success');
+    toast.show('Cart cleared', 'success');
   };
   
   const handleCheckout = () => {
-    showToast('Checkout functionality coming soon!', 'info');
+    toast.show('Checkout functionality coming soon!', 'info');
   };
   
   if (items.length === 0) {
