@@ -1,13 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useToast } from '@/context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
 import MapPicker from '@/components/MapPicker';
+import { placeOrder as placeOrderApi } from '@/services/orderApi';
+import { clearCart } from '@/redux/cartSlice';
 
 const Checkout = () => {
   const { items, totalAmount, totalQuantity } = useSelector(state => state.cart);
   const toast = useToast();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Address state
   const [address, setAddress] = useState({
@@ -59,9 +63,47 @@ const Checkout = () => {
 
   const placeOrder = async () => {
     if (!canPlaceOrder) return;
-    // Placeholder: integrate with backend order creation
-    toast.show('Order placed successfully!', 'success');
-    navigate('/');
+    
+    try {
+      setIsLoading(true);
+      
+      const orderData = {
+        items: items.map(item => ({
+          itemId: item.id,
+          quantity: item.quantity
+        })),
+        deliveryAddress: {
+          addressLine: address.line1,
+          city: address.city,
+          state: address.state,
+          pincode: address.postalCode,
+          coordinates: location
+        },
+        payment: {
+          method: paymentMethod
+        }
+      };
+      
+      const response = await placeOrderApi(orderData);
+      
+      if (response.success) {
+        toast.show('Order placed successfully!', 'success');
+        dispatch(clearCart());
+        navigate('/order-placed', { 
+          state: { 
+            orderId: response.order?._id || 'N/A',
+            totalAmount: response.order?.totalAmount || 0
+          } 
+        });
+      } else {
+        toast.show(response.message || 'Failed to place order', 'error');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.show('Something went wrong. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -236,11 +278,11 @@ const Checkout = () => {
               <span className="text-lg font-bold">₹{grandTotal}</span>
             </div>
             <button
-              disabled={!canPlaceOrder}
+              disabled={!canPlaceOrder || isLoading}
               onClick={placeOrder}
-              className={`w-full px-6 py-3 rounded-md text-white ${canPlaceOrder ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-300 cursor-not-allowed'}`}
+              className={`w-full px-6 py-3 rounded-md text-white ${canPlaceOrder && !isLoading ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-300 cursor-not-allowed'}`}
             >
-              Place Order
+              {isLoading ? 'Processing...' : 'Place Order'}
             </button>
             {!canPlaceOrder && (
               <div className="text-xs text-gray-600 mt-2">Fill address and payment details to proceed.</div>

@@ -12,6 +12,7 @@ import CreateEditShop from "./pages/CreateEditShop";
 import AddFoodItem from "./components/OwnerComponents/AddFoodItem";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import OrderPlaced from "./pages/OrderPlaced";
 
 function App() {
   useGetCurrentUser();
@@ -33,6 +34,7 @@ function App() {
       <Route path="/add-food-item" element={userData ? <AddFoodItem /> : <Navigate to="/signin" />} />
       <Route path="/cart" element={userData ? <Cart /> : <Navigate to="/signin" />} />
       <Route path="/checkout" element={userData ? <Checkout /> : <Navigate to="/signin" />} />
+      <Route path="/order-placed" element={userData ? <OrderPlaced /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }
