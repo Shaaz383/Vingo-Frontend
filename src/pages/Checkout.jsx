@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useToast } from '@/context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
+import MapPicker from '@/components/MapPicker';
 
 const Checkout = () => {
   const { items, totalAmount, totalQuantity } = useSelector(state => state.cart);
@@ -22,6 +23,12 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [upiId, setUpiId] = useState('');
   const [card, setCard] = useState({ number: '', name: '', expiry: '', cvv: '' });
+  const [location, setLocation] = useState(null); // { lat, lng }
+  
+  // Update location when address changes
+  const handleLocationChange = (newLocation) => {
+    setLocation(newLocation);
+  };
 
   const deliveryFee = 40;
   const taxAmount = useMemo(() => Math.round(totalAmount * 0.05), [totalAmount]);
@@ -48,7 +55,7 @@ const Checkout = () => {
     return false;
   };
 
-  const canPlaceOrder = items.length > 0 && isAddressValid() && isPaymentValid();
+  const canPlaceOrder = items.length > 0 && isAddressValid() && isPaymentValid() && !!location;
 
   const placeOrder = async () => {
     if (!canPlaceOrder) return;
@@ -112,18 +119,19 @@ const Checkout = () => {
               <div className="text-sm text-red-600 mt-2">Please fill address line 1, city, state, and postal code.</div>
             )}
             <div className="mt-4">
-              <div className="text-sm text-gray-600 mb-2">Map preview</div>
-              <div className="w-full h-64 rounded-lg overflow-hidden border">
-                <iframe
-                  title="Map Preview"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+              <div className="text-sm text-gray-600 mb-2">Drag the marker to confirm exact location</div>
+              <MapPicker 
+                value={location} 
+                onChange={handleLocationChange} 
+                height={256} 
+                address={fullAddress}
+              />
+              <div className="flex justify-between text-sm text-gray-700 mt-2">
+                {location ? (
+                  <span>Selected: lat {location.lat.toFixed(5)}, lng {location.lng.toFixed(5)}</span>
+                ) : (
+                  <span>No location selected yet</span>
+                )}
               </div>
             </div>
           </div>
