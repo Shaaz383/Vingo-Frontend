@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '@/context/ToastContext.jsx';
-import { selectCartItemCount } from '../../redux/cartSlice';
 import { 
   FaSearch, 
   FaShoppingCart, 
@@ -223,7 +222,7 @@ const Nav = () => {
             isOwner={isOwner}
             hasShop={hasShop}
             ordersCount={ORDERS_COUNT_STATIC}
-            cartCount={CART_COUNT_STATIC}
+            cartCount={cartItemCount}
             isMobileMenuOpen={isMobileMenuOpen}
             toggleMobileMenu={toggleMobileMenu}
             handleNavigate={handleNavigate}
@@ -240,7 +239,7 @@ const Nav = () => {
           setSearchQuery={setSearchQuery}
           handleSearch={handleSearch}
           handleNavigate={handleNavigate}
-          cartCount={CART_COUNT_STATIC}
+          cartCount={cartItemCount}
           ordersCount={ORDERS_COUNT_STATIC}
           handleLogout={handleLogout}  // Add this line
           // Props for Mobile City Selector
