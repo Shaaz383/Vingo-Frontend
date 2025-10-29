@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FaTrash, FaArrowLeft } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { removeFromCart, updateQuantity, clearCart } from '@/redux/cartSlice';
 import { useToast } from '@/context/ToastContext';
 
@@ -69,6 +69,7 @@ const Cart = () => {
   const { items, totalAmount, totalQuantity } = useSelector(state => state.cart);
   const dispatch = useDispatch();
   const toast = useToast();
+  const navigate = useNavigate();
   
   const handleUpdateQuantity = (itemId, quantity) => {
     dispatch(updateQuantity({ id: itemId, quantity }));
@@ -85,7 +86,7 @@ const Cart = () => {
   };
   
   const handleCheckout = () => {
-    toast.show('Checkout functionality coming soon!', 'info');
+    navigate('/checkout');
   };
   
   if (items.length === 0) {
