@@ -13,6 +13,8 @@ import AddFoodItem from "./components/OwnerComponents/AddFoodItem";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderPlaced from "./pages/OrderPlaced";
+import MyOrders from "./pages/MyOrders";
+import OrderDetail from "./pages/OrderDetail";
 
 function App() {
   useGetCurrentUser();
@@ -35,6 +37,8 @@ function App() {
       <Route path="/cart" element={userData ? <Cart /> : <Navigate to="/signin" />} />
       <Route path="/checkout" element={userData ? <Checkout /> : <Navigate to="/signin" />} />
       <Route path="/order-placed" element={userData ? <OrderPlaced /> : <Navigate to="/signin" />} />
+      <Route path="/my-orders" element={userData ? <MyOrders /> : <Navigate to="/signin" />} />
+      <Route path="/orders/:id" element={userData ? <OrderDetail /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }
