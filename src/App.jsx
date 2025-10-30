@@ -15,6 +15,7 @@ import Checkout from "./pages/Checkout";
 import OrderPlaced from "./pages/OrderPlaced";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
+import ShopOrders from "./pages/ShopOrders";
 
 function App() {
   useGetCurrentUser();
@@ -39,6 +40,7 @@ function App() {
       <Route path="/order-placed" element={userData ? <OrderPlaced /> : <Navigate to="/signin" />} />
       <Route path="/my-orders" element={userData ? <MyOrders /> : <Navigate to="/signin" />} />
       <Route path="/orders/:id" element={userData ? <OrderDetail /> : <Navigate to="/signin" />} />
+      <Route path="/shop/orders" element={userData ? <ShopOrders /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }

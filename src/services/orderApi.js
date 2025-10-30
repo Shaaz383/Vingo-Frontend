@@ -39,3 +39,23 @@ export const getOrderById = async (orderId) => {
     throw error.response?.data || { message: 'Failed to fetch order details' };
   }
 };
+
+// Get all orders for the shop owner
+export const getShopOrders = async () => {
+  try {
+    const response = await api.get(`${API_URL}/shop`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch shop orders' };
+  }
+};
+
+// Update shop order status
+export const updateShopOrderStatus = async (orderId, status) => {
+  try {
+    const response = await api.patch(`${API_URL}/shop/${orderId}/status`, { status });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to update order status' };
+  }
+};

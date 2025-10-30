@@ -11,7 +11,7 @@ const DesktopActions = ({
   cartCount,
   ordersCount,
 }) => {
-  const handleOwnerOrdersClick = () => handleNavigate('/owner/manage-orders');
+  const handleOwnerOrdersClick = () => handleNavigate('/shop/orders');
   const handleUserOrdersClick = () => handleNavigate('/my-orders');
   const handleAddFoodClick = () => handleNavigate('/add-food-item');
 

@@ -74,7 +74,7 @@ const SetupShopCard = ({ myShopData }) => {
           <div className="bg-gray-50 border-t border-gray-100 px-8 py-4 flex justify-between items-center text-sm text-gray-500">
             <span>Keep your shop info updated for better visibility.</span>
             <button
-              onClick={() => navigate("/owner/orders")}
+              onClick={() => navigate("/shop/orders")}
               className="text-red-600 font-semibold hover:text-red-700 transition-colors"
             >
               View Orders →

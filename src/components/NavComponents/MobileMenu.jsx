@@ -137,7 +137,7 @@ const MobileMenu = ({
                 </button>
 
                 <button
-                  onClick={() => handleNavigate("/owner/manage-orders")}
+                  onClick={() => handleNavigate("/shop/orders")}
                   className="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <div className="flex items-center space-x-3">

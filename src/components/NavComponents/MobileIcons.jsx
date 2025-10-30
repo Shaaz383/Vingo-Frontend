@@ -19,7 +19,7 @@ const MobileIcons = ({
   handleNavigate
 }) => {
   const cartCount = useSelector(selectCartItemCount);
-  const handleOwnerOrdersClick = () => handleNavigate('/owner/manage-orders');
+  const handleOwnerOrdersClick = () => handleNavigate('/shop/orders');
   const handleCreateShopClick = () => handleNavigate('/owner/create-shop');
   const handleAddFoodClick = () => handleNavigate('/owner/add-food');
 
