@@ -95,37 +95,45 @@ export default function ShopOrders() {
         
         <div className="flex flex-col space-y-2 w-full md:w-auto">
           <div className="flex items-center justify-between md:justify-end">
-            <div className="inline-flex rounded-md shadow-sm" role="group">
-              <button 
-                onClick={() => setStatusFilter('all')} 
-                className={`px-4 py-2 text-sm font-medium ${statusFilter === 'all' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 rounded-l-md`}
-              >
-                All Orders
-              </button>
-              <button 
-                onClick={() => setStatusFilter('pending')} 
-                className={`px-4 py-2 text-sm font-medium ${statusFilter === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300`}
-              >
-                Pending
-              </button>
-              <button 
-                onClick={() => setStatusFilter('preparing')} 
-                className={`px-4 py-2 text-sm font-medium ${statusFilter === 'preparing' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300`}
-              >
-                Preparing
-              </button>
-              <button 
-                onClick={() => setStatusFilter('out for delivery')} 
-                className={`px-4 py-2 text-sm font-medium ${statusFilter === 'out for delivery' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300`}
-              >
-                Out for Delivery
-              </button>
-              <button 
-                onClick={() => setStatusFilter('delivered')} 
-                className={`px-4 py-2 text-sm font-medium ${statusFilter === 'delivered' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-r border-gray-300 rounded-r-md`}
-              >
-                Delivered
-              </button>
+            <div className="flex overflow-x-auto pb-2 w-full">
+              <div className="flex w-full min-w-max">
+                <button 
+                  onClick={() => setStatusFilter('all')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'all' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 rounded-l-md flex-1`}
+                >
+                  All Orders
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('pending')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                >
+                  Pending
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('accepted')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'accepted' ? 'bg-purple-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                >
+                  Accepted
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('preparing')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'preparing' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                >
+                  Preparing
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('out for delivery')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'out for delivery' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                >
+                  Out for Delivery
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('delivered')} 
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'delivered' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-r border-gray-300 rounded-r-md flex-1`}
+                >
+                  Delivered
+                </button>
+              </div>
             </div>
             <div className="text-sm text-gray-600">
               Showing {filteredOrders.length} of {shopOrders.length} orders
@@ -241,39 +249,119 @@ export default function ShopOrders() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-4 border-t border-gray-100 flex flex-wrap items-center justify-between">
-                <div className="text-sm text-gray-600 mb-2 sm:mb-0">
-                  Update order status:
+              <div className="bg-white p-4 border-t border-gray-100 rounded-b-lg shadow-sm">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Update Order Status</h3>
+                  <div className="h-1 w-24 bg-indigo-500 rounded mt-1"></div>
                 </div>
-                <div className="flex space-x-2">
+                
+                <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={() => handleStatusChange(so._id, 'preparing')}
-                    className={`px-3 py-1 text-xs font-medium rounded ${so.status === 'preparing' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-yellow-100 border border-gray-300'}`}
+                    onClick={() => handleStatusChange(so._id, 'accepted')}
+                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                      so.status === 'accepted' 
+                        ? 'bg-purple-600 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-gray-200'
+                    }`}
                     disabled={processingOrder === so._id}
                   >
                     {processingOrder === so._id ? (
                       <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         Updating...
                       </span>
-                    ) : 'Preparing'}
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Accept
+                      </>
+                    )}
                   </button>
+                  
+                  <button 
+                    onClick={() => handleStatusChange(so._id, 'preparing')}
+                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                      so.status === 'preparing' 
+                        ? 'bg-yellow-500 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
+                    }`}
+                    disabled={processingOrder === so._id}
+                  >
+                    {processingOrder === so._id ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Updating...
+                      </span>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Preparing
+                      </>
+                    )}
+                  </button>
+                  
                   <button 
                     onClick={() => handleStatusChange(so._id, 'out for delivery')}
-                    className={`px-3 py-1 text-xs font-medium rounded ${so.status === 'out for delivery' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-blue-100 border border-gray-300'}`}
+                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                      so.status === 'out for delivery' 
+                        ? 'bg-blue-600 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200'
+                    }`}
                     disabled={processingOrder === so._id}
                   >
-                    {processingOrder === so._id ? 'Updating...' : 'Out for Delivery'}
+                    {processingOrder === so._id ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Updating...
+                      </span>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Out for Delivery
+                      </>
+                    )}
                   </button>
+                  
                   <button 
                     onClick={() => handleStatusChange(so._id, 'delivered')}
-                    className={`px-3 py-1 text-xs font-medium rounded ${so.status === 'delivered' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-green-100 border border-gray-300'}`}
+                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                      so.status === 'delivered' 
+                        ? 'bg-green-600 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
+                    }`}
                     disabled={processingOrder === so._id}
                   >
-                    {processingOrder === so._id ? 'Updating...' : 'Delivered'}
+                    {processingOrder === so._id ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Updating...
+                      </span>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Delivered
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
