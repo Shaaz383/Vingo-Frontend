@@ -273,7 +273,7 @@ export default function MyOrders() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm text-gray-600">Name</p>
-                            <p className="font-medium">{orderDetails[order._id].user?.name || 'N/A'}</p>
+                            <p className="font-medium">{orderDetails[order._id].deliveryAddress?.name || 'N/A'}</p>
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">Email</p>
@@ -293,6 +293,9 @@ export default function MyOrders() {
                           {orderDetails[order._id].deliveryAddress?.city || 'N/A'}, 
                           {orderDetails[order._id].deliveryAddress?.state || 'N/A'} - 
                           {orderDetails[order._id].deliveryAddress?.pincode || 'N/A'}
+                        </p>
+                        <p className="text-gray-600 mt-1">
+                          <span className="font-medium">Mobile:</span> {orderDetails[order._id].deliveryAddress?.mobileNumber || 'N/A'}
                         </p>
                       </div>
 
@@ -380,7 +383,10 @@ export default function MyOrders() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Taxes</span>
-                            <span>₹{orderDetails[order._id]?.taxes || 0}</span>
+                            <span>₹{Math.round(orderDetails[order._id]?.taxes || 0)}</span>
+                            
+
+
                           </div>
                           <div className="flex justify-between font-bold pt-2 border-t border-gray-200 mt-2">
                             <span>Total</span>

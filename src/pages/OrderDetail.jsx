@@ -156,8 +156,12 @@ export default function OrderDetail() {
                 Delivery Address
               </h3>
               <div className="bg-gray-50 p-3 rounded-md">
+                <p className="text-gray-800 font-medium">{deliveryAddress?.name || order?.user?.fullName || 'N/A'}</p>
                 <p className="text-gray-800">{deliveryAddress?.addressLine}</p>
                 <p className="text-gray-600">{deliveryAddress?.city}, {deliveryAddress?.state} - {deliveryAddress?.pincode}</p>
+                <p className="text-gray-600 mt-1">
+                  <span className="font-medium">Mobile:</span> {deliveryAddress?.mobileNumber || 'Not provided'}
+                </p>
               </div>
             </div>
 

@@ -15,11 +15,13 @@ const Checkout = () => {
 
   // Address state
   const [address, setAddress] = useState({
+    name: '',
     line1: '',
     line2: '',
     city: '',
     state: '',
     postalCode: '',
+    mobileNumber: '',
     instructions: '',
   });
 
@@ -47,7 +49,7 @@ const Checkout = () => {
   const mapQuery = fullAddress || 'India';
 
   const isAddressValid = () => {
-    return address.line1 && address.city && address.state && address.postalCode;
+    return address.name && address.line1 && address.city && address.state && address.postalCode && address.mobileNumber;
   };
 
   const isPaymentValid = () => {
@@ -73,10 +75,12 @@ const Checkout = () => {
           quantity: item.quantity
         })),
         deliveryAddress: {
+          name: address.name,
           addressLine: address.line1,
           city: address.city,
           state: address.state,
           pincode: address.postalCode,
+          mobileNumber: address.mobileNumber,
           coordinates: location
         },
         payment: {
@@ -122,6 +126,13 @@ const Checkout = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 className="border rounded-md px-3 py-2"
+                placeholder="Full Name"
+                value={address.name}
+                onChange={(e) => setAddress(a => ({ ...a, name: e.target.value }))}
+              />
+
+              <input
+                className="border rounded-md px-3 py-2"
                 placeholder="Address line 1"
                 value={address.line1}
                 onChange={(e) => setAddress(a => ({ ...a, line1: e.target.value }))}
@@ -146,6 +157,12 @@ const Checkout = () => {
               />
               <input
                 className="border rounded-md px-3 py-2"
+                placeholder="Mobile Number"
+                value={address.mobileNumber}
+                onChange={(e) => setAddress(a => ({ ...a, mobileNumber: e.target.value }))}
+              />
+              <input
+                className="border rounded-md px-3 py-2"
                 placeholder="Postal code"
                 value={address.postalCode}
                 onChange={(e) => setAddress(a => ({ ...a, postalCode: e.target.value }))}
@@ -158,7 +175,7 @@ const Checkout = () => {
               />
             </div>
             {!isAddressValid() && (
-              <div className="text-sm text-red-600 mt-2">Please fill address line 1, city, state, and postal code.</div>
+              <div className="text-sm text-red-600 mt-2">Please fill address line 1, city, state, postal code, and mobile number.</div>
             )}
             <div className="mt-4">
               <div className="text-sm text-gray-600 mb-2">Drag the marker to confirm exact location</div>

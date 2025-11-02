@@ -203,9 +203,20 @@ export default function ShopOrders() {
                     <FaUser className="mr-2 text-red-500" />
                     Customer
                   </h3>
-                  <p className="text-gray-800 font-medium">{so.order?.user?.fullName}</p>
+                  <p className="text-gray-800 font-medium">{so.order?.deliveryAddress?.name || so.order?.user?.fullName}</p>
                   <p className="text-gray-600 text-sm">{so.order?.user?.email}</p>
-                  <p className="text-gray-600 text-sm">{so.order?.user?.phone || 'No phone provided'}</p>
+                  <p className="text-gray-600 text-sm">
+                    <span className="font-medium">Mobile:</span> {so.order?.deliveryAddress?.mobileNumber || 'Not provided'}
+                  </p>
+                  
+                  {/* Delivery Address */}
+                  <h3 className="font-medium text-gray-700 mt-3 mb-1 flex items-center">
+                    <FaMapMarkerAlt className="mr-2 text-red-500" />
+                    Delivery Address
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    {so.order?.deliveryAddress?.addressLine}, {so.order?.deliveryAddress?.city}, {so.order?.deliveryAddress?.state} - {so.order?.deliveryAddress?.pincode}
+                  </p>
                 </div>
 
                 {/* Order Items */}
@@ -235,7 +246,8 @@ export default function ShopOrders() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tax:</span>
-                      <span>₹{so.tax || 0}</span>
+                      <span>₹{Math.round(so.tax) || 0}</span>
+                      
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Delivery Fee:</span>
@@ -243,7 +255,7 @@ export default function ShopOrders() {
                     </div>
                     <div className="flex justify-between font-bold pt-2 border-t">
                       <span>Total:</span>
-                      <span>₹{so.total || 0}</span>
+                      <span>₹{Math.round(so.total) || 0}</span>
                     </div>
                   </div>
                 </div>
