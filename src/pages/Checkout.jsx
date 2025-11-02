@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import MapPicker from '@/components/MapPicker';
 import { placeOrder as placeOrderApi } from '@/services/orderApi';
 import { clearCart } from '@/redux/cartSlice';
+import { toast as hotToast } from 'react-hot-toast';
 
 const Checkout = () => {
   const { items, totalAmount, totalQuantity } = useSelector(state => state.cart);
@@ -103,11 +104,11 @@ const Checkout = () => {
         toast.show(response.message || 'Failed to place order', 'error');
       }
     } catch (error) {
-      console.error('Error placing order:', error);
-      toast.show('Something went wrong. Please try again.', 'error');
-    } finally {
-      setIsLoading(false);
-    }
+        console.error('Error placing order:', error);
+        toast.show('Failed to place order. Please try again.', 'error');
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   return (

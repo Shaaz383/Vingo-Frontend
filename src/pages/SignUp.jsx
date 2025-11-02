@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 import {
   FaEye,
   FaEyeSlash,
@@ -63,7 +64,7 @@ function SignUp() {
       dispatch(setUserData(response.data.user));
 
       console.log("Google signup success:", response.data);
-      alert("Welcome! Your account has been created successfully with Google.");
+      toast.success("Welcome! Your account has been created successfully with Google.");
 
       navigate("/");
     } catch (error) {
@@ -151,7 +152,7 @@ function SignUp() {
       dispatch(setUserData(response.data.user));
 
       console.log("Signup success:", response.data);
-      alert("Account created successfully! Please sign in.");
+      toast.success("Account created successfully! Please sign in.");
 
       setFormData({
         fullName: "",

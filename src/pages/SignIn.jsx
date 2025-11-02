@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice"; // ✅ adjust path based on your folder
+import { toast } from "react-hot-toast";
 
 import {
   FaEye,
@@ -90,7 +91,7 @@ function SignIn() {
       dispatch(setUserData(response.data.user));
 
       console.log("Google signin success:", response.data);
-      alert("Welcome! You have been signed in successfully with Google.");
+      toast.success("Welcome! You have been signed in successfully with Google.");
 
       navigate("/");
     } catch (error) {
@@ -134,7 +135,7 @@ function SignIn() {
       );
 
       console.log("Signin success:", response.data);
-      alert("Welcome back! You have been signed in successfully.");
+      toast.success("Welcome back! You have been signed in successfully.");
 
       // ✅ Dispatch user data
       dispatch(setUserData(response.data.user));

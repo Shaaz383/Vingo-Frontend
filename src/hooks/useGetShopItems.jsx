@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const useGetShopItems = () => {
   const [items, setItems] = useState([]);
@@ -23,6 +24,7 @@ const useGetShopItems = () => {
     } catch (err) {
       console.error('Error fetching shop items:', err);
       setError(err?.response?.data?.message || 'Failed to fetch items');
+      toast.error(err?.response?.data?.message || 'Failed to fetch shop items');
       setItems([]);
       setItemCount(0);
     } finally {

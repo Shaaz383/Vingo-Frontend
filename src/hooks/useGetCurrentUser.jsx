@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setUserData, setUserLoading } from "../redux/userSlice"; // adjust path as needed
+import { toast } from "react-hot-toast";
 
 const useGetCurrentUser = () => {
   const dispatch = useDispatch();
@@ -22,10 +23,13 @@ const useGetCurrentUser = () => {
       } catch (error) {
         if (error.response) {
           console.error("Server error:", error.response.data);
+          toast.error("Failed to load user data");
         } else if (error.request) {
           console.error("Network error: No response received");
+          toast.error("Network error. Please check your connection.");
         } else {
           console.error("Unexpected error:", error.message);
+          toast.error("An unexpected error occurred");
         }
         // mark as not loading even on error so routes can render
         dispatch(setUserLoading(false));

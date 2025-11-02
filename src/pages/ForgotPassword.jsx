@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { FaEnvelope, FaArrowLeft, FaLock } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 
 function ForgotPassword() {
   const [step, setStep] = useState(1);
@@ -52,6 +53,7 @@ function ForgotPassword() {
         }
       );
       setSuccessMessage("OTP has been sent to your email.");
+      toast.success("OTP has been sent to your email.");
       setOtpSent(true);
       setOtp("");
       setResendCooldown(60);
@@ -66,16 +68,19 @@ function ForgotPassword() {
           ...prev,
           api: error.response.data.message || "Failed to send OTP",
         }));
+        toast.error(error.response.data.message || "Failed to send OTP");
       } else if (error.request) {
         setErrors((prev) => ({
           ...prev,
           api: "Network error. Please check your connection.",
         }));
+        toast.error("Network error. Please check your connection.");
       } else {
         setErrors((prev) => ({
           ...prev,
           api: error.message || "An unexpected error occurred",
         }));
+        toast.error(error.message || "An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -109,16 +114,19 @@ function ForgotPassword() {
           ...prev,
           api: error.response.data.message || "Invalid OTP",
         }));
+        toast.error(error.response.data.message || "Invalid OTP");
       } else if (error.request) {
         setErrors((prev) => ({
           ...prev,
           api: "Network error. Please check your connection.",
         }));
+        toast.error("Network error. Please check your connection.");
       } else {
         setErrors((prev) => ({
           ...prev,
           api: error.message || "An unexpected error occurred",
         }));
+        toast.error(error.message || "An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -149,22 +157,26 @@ function ForgotPassword() {
         }
       );
       setSuccessMessage("Password has been reset successfully. You can sign in now.");
+      toast.success("Password has been reset successfully. You can sign in now.");
     } catch (error) {
       if (error.response) {
         setErrors((prev) => ({
           ...prev,
           api: error.response.data.message || "Failed to reset password",
         }));
+        toast.error(error.response.data.message || "Failed to reset password");
       } else if (error.request) {
         setErrors((prev) => ({
           ...prev,
           api: "Network error. Please check your connection.",
         }));
+        toast.error("Network error. Please check your connection.");
       } else {
         setErrors((prev) => ({
           ...prev,
           api: error.message || "An unexpected error occurred",
         }));
+        toast.error(error.message || "An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
