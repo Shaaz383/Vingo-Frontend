@@ -180,9 +180,9 @@ export default function ShopOrders() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="font-bold text-lg">₹{so.total}</div>
+                    <div className="font-bold text-lg">₹{so.total || 0}</div>
                     <div className={`text-xs px-2 py-1 rounded-full text-white ${getStatusColor(so.status)}`}>
-                      {so.status}
+                      {so.status || 'Processing'}
                     </div>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export default function ShopOrders() {
                           </span>
                           <span>{it.item?.name}</span>
                         </div>
-                        <span className="font-medium">₹{it.pricePerUnit * it.quantity}</span>
+                        <span className="font-medium">₹{(it.priceAtPurchase || it.item?.price || it.pricePerUnit || 0) * (it.quantity || 0)}</span>
                       </li>
                     ))}
                   </ul>
@@ -223,19 +223,19 @@ export default function ShopOrders() {
                   <div className="mt-4 border-t pt-3 space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span>₹{so.subtotal}</span>
+                      <span>₹{so.subtotal || 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tax:</span>
-                      <span>₹{so.tax}</span>
+                      <span>₹{so.tax || 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Delivery Fee:</span>
-                      <span>₹{so.deliveryFee}</span>
+                      <span>₹{so.deliveryFee || 0}</span>
                     </div>
                     <div className="flex justify-between font-bold pt-2 border-t">
                       <span>Total:</span>
-                      <span>₹{so.total}</span>
+                      <span>₹{so.total || 0}</span>
                     </div>
                   </div>
                 </div>
