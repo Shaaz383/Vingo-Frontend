@@ -27,7 +27,7 @@ const OrderPlaced = () => {
         
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
           <p className="text-gray-700 mb-1">Total Amount</p>
-          <p className="text-2xl font-bold text-gray-900">₹{totalAmount?.toFixed(2) || '0.00'}</p>
+          <p className="text-2xl font-bold text-gray-900">₹{Math.round(totalAmount) || 0}</p>
         </div>
         
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">

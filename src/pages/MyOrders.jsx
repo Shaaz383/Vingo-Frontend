@@ -248,7 +248,7 @@ export default function MyOrders() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="font-bold text-lg">₹{order.totalAmount}</div>
+                    <div className="font-bold text-lg">₹{Math.round(order.totalAmount)}</div>
                     <div className={`text-xs px-2 py-1 rounded-full text-white ${getStatusColor(order.status)}`}>
                       {order.status}
                     </div>
@@ -350,7 +350,7 @@ export default function MyOrders() {
                                             </div>
                                           </div>
                                         </div>
-                                        <span className="font-medium">₹{total}</span>
+                                        <span className="font-medium">₹{Math.round(total)}</span>
                                       </div>
                                     );
                                   })}
@@ -358,7 +358,7 @@ export default function MyOrders() {
                                 
                                 <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                                   <span className="text-gray-600 text-sm">Subtotal</span>
-                                  <span className="font-bold">₹{calculateSubtotal(shopOrder.items)}</span>
+                                  <span className="font-bold">₹{Math.round(calculateSubtotal(shopOrder.items))}</span>
                                 </div>
                               </div>
                             </div>
@@ -375,22 +375,19 @@ export default function MyOrders() {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Items Total</span>
-                            <span>₹{orderDetails[order._id]?.itemsTotal || order.totalAmount || 0}</span>
+                            <span>₹{Math.round(orderDetails[order._id]?.itemsTotal || order.totalAmount || 0)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Delivery Fee</span>
-                            <span>₹{orderDetails[order._id]?.deliveryFee || 0}</span>
+                            <span>₹{Math.round(orderDetails[order._id]?.deliveryFee || 0)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Taxes</span>
                             <span>₹{Math.round(orderDetails[order._id]?.taxes || 0)}</span>
-                            
-
-
                           </div>
                           <div className="flex justify-between font-bold pt-2 border-t border-gray-200 mt-2">
                             <span>Total</span>
-                            <span>₹{orderDetails[order._id]?.totalAmount || order.totalAmount || 0}</span>
+                            <span>₹{Math.round(orderDetails[order._id]?.totalAmount || order.totalAmount || 0)}</span>
                           </div>
                         </div>
                       </div>
@@ -463,7 +460,7 @@ export default function MyOrders() {
                                 </div>
                               </div>
                             </div>
-                            <span className="font-medium">₹{(item.quantity || 0) * (item.priceAtPurchase || item.item?.price || item.pricePerUnit || 0)}</span>
+                            <span className="font-medium">₹{Math.round((item.quantity || 0) * (item.priceAtPurchase || item.item?.price || item.pricePerUnit || 0))}</span>
                           </div>
                         ))}
                       </div>

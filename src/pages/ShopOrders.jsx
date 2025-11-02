@@ -234,7 +234,7 @@ export default function ShopOrders() {
                           </span>
                           <span>{it.item?.name}</span>
                         </div>
-                        <span className="font-medium">₹{(it.priceAtPurchase || it.item?.price || it.pricePerUnit || 0) * (it.quantity || 0)}</span>
+                        <span className="font-medium">₹{Math.round((it.priceAtPurchase || it.item?.price || it.pricePerUnit || 0) * (it.quantity || 0))}</span>
                       </li>
                     ))}
                   </ul>
@@ -242,7 +242,7 @@ export default function ShopOrders() {
                   <div className="mt-4 border-t pt-3 space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span>₹{so.subtotal || 0}</span>
+                      <span>₹{Math.round(so.subtotal || 0)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tax:</span>
@@ -251,7 +251,7 @@ export default function ShopOrders() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Delivery Fee:</span>
-                      <span>₹{so.deliveryFee || 0}</span>
+                      <span>₹{Math.round(so.deliveryFee || 0)}</span>
                     </div>
                     <div className="flex justify-between font-bold pt-2 border-t">
                       <span>Total:</span>

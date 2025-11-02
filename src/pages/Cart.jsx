@@ -133,18 +133,13 @@ const Cart = () => {
           <span className="text-gray-600">Subtotal</span>
           <span className="font-semibold">₹{totalAmount}</span>
         </div>
-        <div className="flex justify-between mb-2">
-          <span className="text-gray-600">Delivery Fee</span>
-          <span className="font-semibold">₹40</span>
-        </div>
-        <div className="flex justify-between mb-2">
-          <span className="text-gray-600">Tax</span>
-          <span className="font-semibold">₹{Math.round(totalAmount * 0.05)}</span>
-        </div>
         <div className="border-t my-4"></div>
         <div className="flex justify-between mb-6">
           <span className="text-lg font-bold">Total</span>
-          <span className="text-lg font-bold">₹{totalAmount + 40 + Math.round(totalAmount * 0.05)}</span>
+          <span className="text-lg font-bold">₹{totalAmount}</span>
+        </div>
+        <div className="text-xs text-gray-500 mb-4">
+          Note: Delivery fee and taxes will be calculated at checkout
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
