@@ -32,12 +32,12 @@ export default function ShopOrders() {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'delivered': return 'bg-green-500';
-      case 'accepted': return 'bg-blue-500';
-      case 'preparing': return 'bg-yellow-500';
-      case 'out for delivery': return 'bg-indigo-500';
-      case 'rejected':
-      case 'cancelled': return 'bg-red-500';
+      case 'Delivered': return 'bg-green-500';
+      case 'Accepted': return 'bg-blue-500';
+      case 'Preparing': return 'bg-yellow-500';
+      case 'Out for Delivery': return 'bg-indigo-500';
+      case 'Rejected':
+      case 'Cancelled': return 'bg-red-500'; 
       default: return 'bg-gray-500';
     }
   };

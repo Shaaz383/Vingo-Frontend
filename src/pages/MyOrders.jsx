@@ -3,6 +3,7 @@ import { getMyOrders, getOrderById } from '../services/orderApi';
 import { Link } from 'react-router-dom';
 import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync, FaStore, FaMoneyBillWave, FaShippingFast, FaReceipt } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import { useSocket } from '../context/SocketContext';
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
@@ -11,6 +12,7 @@ export default function MyOrders() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const { socket } = useSocket();
 
   const fetchOrders = async () => {
     try {
@@ -32,6 +34,57 @@ export default function MyOrders() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Socket.io event listener for real-time order status updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleOrderStatusUpdate = (data) => {
+      console.log('Received order status update:', data);
+      
+      // Update orders list with new status
+      setOrders(prevOrders => 
+        prevOrders.map(order => {
+          // Find the shop order that matches the updated one
+          const updatedShopOrders = order.shopOrders.map(shopOrder => {
+            if (shopOrder._id === data.shopOrderId) {
+              // Show toast notification for status update
+              toast.success(`Order status updated to: ${data.status}`);
+              return { ...shopOrder, status: data.status };
+            }
+            return shopOrder;
+          });
+          
+          return {
+            ...order,
+            shopOrders: updatedShopOrders
+          };
+        })
+      );
+      
+      // Update order details if expanded
+      if (orderDetails[data.orderId]) {
+        setOrderDetails(prev => ({
+          ...prev,
+          [data.orderId]: {
+            ...prev[data.orderId],
+            shopOrders: prev[data.orderId].shopOrders.map(shopOrder => {
+              if (shopOrder._id === data.shopOrderId) {
+                return { ...shopOrder, status: data.status };
+              }
+              return shopOrder;
+            })
+          }
+        }));
+      }
+    };
+
+    socket.on('orderStatusUpdated', handleOrderStatusUpdate);
+
+    return () => {
+      socket.off('orderStatusUpdated', handleOrderStatusUpdate);
+    };
+  }, [socket, orderDetails]);
 
   const fetchOrderDetails = async (orderId) => {
     if (orderDetails[orderId]) {
