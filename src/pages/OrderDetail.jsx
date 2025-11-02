@@ -262,8 +262,8 @@ export default function OrderDetail() {
                 
                 <div className="flex">
                   <div className="flex flex-col items-center mr-4">
-                    <div className={`rounded-full h-8 w-8 ${status === 'preparing' || status === 'out for delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
-                      {status === 'preparing' || status === 'out for delivery' || status === 'delivered' ? (
+                    <div className={`rounded-full h-8 w-8 ${status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
+                      {status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
@@ -271,18 +271,18 @@ export default function OrderDetail() {
                         <span>2</span>
                       )}
                     </div>
-                    <div className={`h-full border-l-2 ${status === 'out for delivery' || status === 'delivered' ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
+                    <div className={`h-full border-l-2 ${status === 'out_for_delivery' || status === 'delivered' ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
                   </div>
                   <div className="pb-6">
-                    <p className={`font-medium ${status === 'preparing' || status === 'out for delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Preparing</p>
+                    <p className={`font-medium ${status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Preparing</p>
                     <p className="text-sm text-gray-500">Your food is being prepared</p>
                   </div>
                 </div>
                 
                 <div className="flex">
                   <div className="flex flex-col items-center mr-4">
-                    <div className={`rounded-full h-8 w-8 ${status === 'out for delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
-                      {status === 'out for delivery' || status === 'delivered' ? (
+                    <div className={`rounded-full h-8 w-8 ${status === 'out_for_delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
+                      {status === 'out_for_delivery' || status === 'delivered' ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
@@ -293,7 +293,7 @@ export default function OrderDetail() {
                     <div className={`h-full border-l-2 ${status === 'delivered' ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
                   </div>
                   <div className="pb-6">
-                    <p className={`font-medium ${status === 'out for delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Out for Delivery</p>
+                    <p className={`font-medium ${status === 'out_for_delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Out for Delivery</p>
                     <p className="text-sm text-gray-500">Your order is on the way</p>
                   </div>
                 </div>
