@@ -16,6 +16,7 @@ import OrderPlaced from "./pages/OrderPlaced";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
 import ShopOrders from "./pages/ShopOrders";
+import DeliveryBoy from "./components/DeliveryBoy";
 
 function App() {
   useGetCurrentUser();
@@ -41,6 +42,7 @@ function App() {
       <Route path="/my-orders" element={userData ? <MyOrders /> : <Navigate to="/signin" />} />
       <Route path="/orders/:id" element={userData ? <OrderDetail /> : <Navigate to="/signin" />} />
       <Route path="/shop/orders" element={userData ? <ShopOrders /> : <Navigate to="/signin" />} />
+      <Route path="/delivery" element={userData && userData.role === 'delivery' ? <DeliveryBoy /> : <Navigate to="/signin" />} />
     </Routes>
   );
 }
