@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getOrderById } from '../services/orderApi';
+import { FaUser, FaPhone, FaTruck, FaMapMarkerAlt } from 'react-icons/fa';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -27,9 +28,11 @@ export default function OrderDetail() {
       case 'delivered':
         return 'bg-green-500';
       case 'preparing':
-        return 'bg-yellow-500';
-      case 'out for delivery':
+      case 'accepted':
         return 'bg-blue-500';
+      case 'out_for_delivery':
+      case 'ready_for_pickup':
+        return 'bg-orange-500';
       case 'cancelled':
         return 'bg-red-500';
       default:
@@ -37,41 +40,10 @@ export default function OrderDetail() {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'delivered':
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'preparing':
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'out for delivery':
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-            <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
-          </svg>
-        );
-      case 'cancelled':
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-        );
-      default:
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-          </svg>
-        );
-    }
+  const getStatusLabel = (status) => {
+    return status?.toLowerCase()?.replace(/_/g, ' ') || 'Unknown';
   };
+
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -98,6 +70,7 @@ export default function OrderDetail() {
   );
 
   const { totalAmount, status, createdAt, deliveryAddress, shopOrders = [] } = order;
+  const deliveryBoy = shopOrders[0]?.deliveryBoy; // Assuming one delivery boy manages all shop orders
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,16 +78,15 @@ export default function OrderDetail() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Link to="/orders" className="text-white hover:text-gray-200">
+              <Link to="/my-orders" className="text-white hover:text-gray-200">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </Link>
               <h1 className="text-2xl font-bold">Order #{order._id?.slice(-6)}</h1>
             </div>
-            <div className={`px-3 py-1 rounded-full text-white text-sm flex items-center space-x-1 ${getStatusColor(status)}`}>
-              {getStatusIcon(status)}
-              <span>{status}</span>
+            <div className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(status)}`}>
+              {getStatusLabel(status)}
             </div>
           </div>
         </div>
@@ -122,14 +94,44 @@ export default function OrderDetail() {
 
       <div className="max-w-6xl mx-auto p-4 pt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Order Summary */}
+          {/* Order Summary & Delivery Details */}
           <div className="md:col-span-2 space-y-6">
+            
+            {/* Delivery Boy Card (New) */}
+            {deliveryBoy ? (
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+                <h2 className="text-xl font-bold mb-3 flex items-center text-red-600">
+                  <FaTruck className="mr-2" /> Your Delivery Hero
+                </h2>
+                <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <FaUser className="text-red-500 h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-lg">{deliveryBoy.fullName}</p>
+                        <p className="text-sm text-gray-600 flex items-center">
+                            <FaPhone className="w-3 h-3 mr-1" /> {deliveryBoy.mobile || 'N/A'}
+                        </p>
+                    </div>
+                </div>
+                <div className='mt-4 text-sm text-gray-500'>
+                    Status: {getStatusLabel(status)}
+                </div>
+              </div>
+            ) : (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-bold mb-3 flex items-center text-gray-700">
+                        <FaTruck className="mr-2 text-gray-500" /> Delivery Status
+                    </h2>
+                    <p className="text-sm text-gray-500">A delivery boy will be assigned soon after the shop accepts the order.</p>
+                </div>
+            )}
+            
+            {/* Address and Summary */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Order Summary
+                <FaMapMarkerAlt className="h-6 w-6 mr-2 text-red-500" />
+                Delivery Information
               </h2>
               <div className="border-b pb-4 mb-4">
                 <div className="flex justify-between mb-2">
@@ -144,15 +146,12 @@ export default function OrderDetail() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-bold text-lg">₹{totalAmount}</span>
+                  <span className="font-bold text-lg">₹{Math.round(totalAmount)}</span>
                 </div>
               </div>
               
               <h3 className="font-medium text-gray-700 mb-2 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <FaMapMarkerAlt className="h-5 w-5 mr-2 text-red-500" />
                 Delivery Address
               </h3>
               <div className="bg-gray-50 p-3 rounded-md">
@@ -165,7 +164,7 @@ export default function OrderDetail() {
               </div>
             </div>
 
-            {/* Shop Orders */}
+            {/* Shop Orders / Items */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,7 +190,7 @@ export default function OrderDetail() {
                             <h3 className="font-medium">{so.shop?.name || 'Restaurant'}</h3>
                           </div>
                           <div className={`px-2 py-1 rounded-full text-xs text-white ${getStatusColor(so.status)}`}>
-                            {so.status}
+                            {getStatusLabel(so.status)}
                           </div>
                         </div>
                       </div>
@@ -205,29 +204,17 @@ export default function OrderDetail() {
                                 <span className="bg-red-100 text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">
                                   {it.quantity}
                                 </span>
-                                <span>{it.item?.name}</span>
+                                <span>{it.item?.name || it.itemName || 'Item'}</span>
                               </div>
-                              <span className="font-medium">₹{it.pricePerUnit * it.quantity}</span>
+                              <span className="font-medium">₹{it.total}</span>
                             </li>
                           ))}
                         </ul>
                         
                         <div className="border-t pt-3 space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Subtotal:</span>
-                            <span>₹{so.subtotal}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tax:</span>
-                            <span>₹{so.tax}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Delivery Fee:</span>
-                            <span>₹{so.deliveryFee}</span>
-                          </div>
                           <div className="flex justify-between font-bold pt-2 border-t">
                             <span>Total:</span>
-                            <span>₹{so.total}</span>
+                            <span>₹{Math.round(so.total)}</span>
                           </div>
                         </div>
                       </div>
@@ -238,7 +225,7 @@ export default function OrderDetail() {
             </div>
           </div>
           
-          {/* Order Timeline */}
+          {/* Order Timeline (Side Bar) */}
           <div className="md:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
@@ -248,77 +235,45 @@ export default function OrderDetail() {
                 Order Status
               </h2>
               
+              {/* Simplified Timeline */}
               <div className="space-y-6">
-                <div className="flex">
-                  <div className="flex flex-col items-center mr-4">
-                    <div className="rounded-full h-8 w-8 bg-green-500 text-white flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="h-full border-l-2 border-green-500 mx-auto"></div>
-                  </div>
-                  <div className="pb-6">
-                    <p className="font-medium">Order Placed</p>
-                    <p className="text-sm text-gray-500">{new Date(createdAt).toLocaleString()}</p>
-                  </div>
-                </div>
-                
-                <div className="flex">
-                  <div className="flex flex-col items-center mr-4">
-                    <div className={`rounded-full h-8 w-8 ${status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
-                      {status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <span>2</span>
-                      )}
-                    </div>
-                    <div className={`h-full border-l-2 ${status === 'out_for_delivery' || status === 'delivered' ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
-                  </div>
-                  <div className="pb-6">
-                    <p className={`font-medium ${status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Preparing</p>
-                    <p className="text-sm text-gray-500">Your food is being prepared</p>
-                  </div>
-                </div>
-                
-                <div className="flex">
-                  <div className="flex flex-col items-center mr-4">
-                    <div className={`rounded-full h-8 w-8 ${status === 'out_for_delivery' || status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
-                      {status === 'out_for_delivery' || status === 'delivered' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <span>3</span>
-                      )}
-                    </div>
-                    <div className={`h-full border-l-2 ${status === 'delivered' ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
-                  </div>
-                  <div className="pb-6">
-                    <p className={`font-medium ${status === 'out_for_delivery' || status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Out for Delivery</p>
-                    <p className="text-sm text-gray-500">Your order is on the way</p>
-                  </div>
-                </div>
-                
-                <div className="flex">
-                  <div className="flex flex-col items-center mr-4">
-                    <div className={`rounded-full h-8 w-8 ${status === 'delivered' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
-                      {status === 'delivered' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <span>4</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <p className={`font-medium ${status === 'delivered' ? 'text-black' : 'text-gray-500'}`}>Delivered</p>
-                    <p className="text-sm text-gray-500">Enjoy your meal!</p>
-                  </div>
-                </div>
+                {['created', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered'].map((step, index) => {
+                    const isActive = status.toLowerCase() === step;
+                    const isCompleted = step === 'delivered' ? status.toLowerCase() === 'delivered' : ['accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered'].includes(status.toLowerCase());
+                    const isOutForDelivery = status.toLowerCase() === 'out_for_delivery';
+
+                    return (
+                        <div key={step} className="flex">
+                            <div className="flex flex-col items-center mr-4">
+                                <div className={`rounded-full h-8 w-8 ${isCompleted || isActive ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'} flex items-center justify-center`}>
+                                    {isCompleted || isActive ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    ) : (
+                                        <span>{index + 1}</span>
+                                    )}
+                                </div>
+                                {index < 5 && (
+                                    <div className={`h-full border-l-2 ${isCompleted ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
+                                )}
+                            </div>
+                            <div className="pb-6">
+                                <p className={`font-medium ${isCompleted || isActive ? 'text-black' : 'text-gray-500'}`}>
+                                    {getStatusLabel(step)}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                    {step === 'created' && 'Order successfully placed'}
+                                    {step === 'accepted' && 'Shop accepted your order'}
+                                    {step === 'preparing' && 'The food is being prepared'}
+                                    {step === 'ready_for_pickup' && 'Ready for courier pickup'}
+                                    {step === 'out_for_delivery' && 'Your order is on the way'}
+                                    {step === 'delivered' && 'Enjoy your meal!'}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
               </div>
             </div>
           </div>

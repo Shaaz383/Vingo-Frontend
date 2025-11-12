@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FaBox, FaMapMarkerAlt, FaUser, FaSync, FaTruck, FaClock, FaCheckCircle, FaBan } from 'react-icons/fa';
+import { FaBox, FaMapMarkerAlt, FaUser, FaSync, FaTruck, FaClock, FaCheckCircle, FaBan, FaMotorcycle } from 'react-icons/fa';
+import { useSocket } from '../context/SocketContext'; // Import useSocket
 
 // Helper function to determine button and status bar styling
 const getStatusColor = (status) => {
@@ -11,14 +12,16 @@ const getStatusColor = (status) => {
     case 'out_for_delivery':
       return { bg: 'bg-blue-600', text: 'text-white', label: 'Out for Delivery' };
     case 'ready_for_pickup':
-      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Ready for Pickup' };
+      return { bg: 'bg-orange-500', text: 'text-black', label: 'Ready for Pickup' };
     case 'accepted':
+      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Accepted by Shop' };
     case 'preparing':
-      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Preparing/Accepted' };
+      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Preparing' };
     case 'cancelled':
-      return { bg: 'bg-red-600', text: 'text-white', label: 'Cancelled' };
+    case 'rejected':
+      return { bg: 'bg-red-600', text: 'text-white', label: 'Cancelled/Rejected' };
     default:
-      return { bg: 'bg-gray-500', text: 'text-white', label: 'Pending/Unknown' };
+      return { bg: 'bg-gray-500', text: 'text-white', label: 'Awaiting Shop' };
   }
 };
 
@@ -27,20 +30,17 @@ const DeliveryBoy = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(null);
+  const { socket } = useSocket(); // Get socket instance
+
+  const apiBase = 'http://localhost:3000/api/delivery';
 
   // Fetch orders assigned to the current delivery boy
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Using direct API call as implemented in the original file
-      const response = await axios.get('http://localhost:3000/api/delivery/my-orders', { withCredentials: true });
+      const response = await axios.get(`${apiBase}/my-orders`, { withCredentials: true });
       const fetchedOrders = response.data.orders || [];
       setOrders(fetchedOrders);
-      if (fetchedOrders.length > 0) {
-        toast.success(`Found ${fetchedOrders.length} assigned orders!`);
-      } else {
-        toast('No active orders right now.', { icon: '📦' });
-      }
       setError(null);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to fetch orders. Please try again later.');
@@ -55,29 +55,69 @@ const DeliveryBoy = () => {
     fetchOrders();
   }, []);
 
+  // Socket.io Listener for new orders
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new order request from the backend
+    const handleNewOrderRequest = (data) => {
+      toast('New delivery request assigned!', { icon: '🚨' });
+      // Refetch all orders to get the new one
+      fetchOrders();
+    };
+
+    // Listen for status updates (e.g., from Shop changing status)
+    const handleStatusUpdate = (data) => {
+        setOrders(prevOrders => prevOrders.map(order => 
+            order._id === data.shopOrderId ? { ...order, status: data.status } : order
+        ));
+    };
+
+    socket.on('newOrderRequest', handleNewOrderRequest);
+    
+    // Listen for when a shop accepts an order assigned to the delivery boy
+    const handleShopAcceptance = (data) => {
+      toast('Shop has accepted the order!', { icon: '✅' });
+      fetchOrders(); // Refetch to update status and details
+    };
+
+    socket.on('deliveryOrderAcceptedByShop', handleShopAcceptance);
+    socket.on('orderStatusUpdated', handleStatusUpdate);
+
+    return () => {
+      socket.off('newOrderRequest', handleNewOrderRequest);
+      socket.off('deliveryOrderAcceptedByShop', handleShopAcceptance);
+      socket.off('orderStatusUpdated', handleStatusUpdate);
+    };
+  }, [socket]); // Dependency on socket only
+
   // Handle status update for an assigned shop order
   const handleStatusUpdate = async (orderId, newStatus) => {
-    if (processingOrder === orderId) return;
+    if (processingOrder === orderId || newStatus.toLowerCase() === orders.find(o => o._id === orderId)?.status?.toLowerCase()) return;
 
     try {
       setProcessingOrder(orderId);
-      // Using direct API call as implemented in the original file
       const response = await axios.patch(
-        `http://localhost:3000/api/delivery/${orderId}/status`, 
+        `${apiBase}/${orderId}/status`, 
         { status: newStatus }, 
         { withCredentials: true }
       );
       
       // Update local state with the returned order
       setOrders(orders.map(order => (order._id === orderId ? response.data.order : order)));
-      toast.success(`Order #${orderId.slice(-6)} status updated to: ${newStatus.replace(/_/g, ' ').toUpperCase()}`);
+      toast.success(`Delivery status updated to: ${newStatus.replace(/_/g, ' ').toUpperCase()}`);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update order status.');
+      toast.error(err?.response?.data?.message || 'Failed to update delivery status.');
       console.error(err);
     } finally {
       setProcessingOrder(null);
     }
   };
+
+  const pendingOrders = orders.filter(o => o.status.toLowerCase() === 'pending');
+  const activeOrders = orders.filter(o => !['delivered', 'cancelled', 'rejected', 'pending'].includes(o.status.toLowerCase()));
+  const allActiveOrders = [...pendingOrders, ...activeOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
 
   if (loading) {
     return (
@@ -111,8 +151,8 @@ const DeliveryBoy = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-            <FaTruck className="mr-3 text-red-500" />
-            Delivery Dashboard
+            <FaMotorcycle className="mr-3 text-red-500" />
+            My Deliveries
           </h1>
           <button 
             onClick={fetchOrders}
@@ -124,16 +164,17 @@ const DeliveryBoy = () => {
         </div>
 
         <h2 className="text-xl font-semibold text-gray-700 mb-4">
-          Active Orders ({orders.length})
+          Assigned Orders ({allActiveOrders.length})
         </h2>
 
         {/* Order List */}
-        {orders.length > 0 ? (
+        {allActiveOrders.length > 0 ? (
           <div className="space-y-6">
-            {orders.map(order => {
+            {allActiveOrders.map(order => {
               const { bg, text, label } = getStatusColor(order.status);
               const { deliveryAddress } = order.order;
               const isDelivered = order.status.toLowerCase() === 'delivered' || order.status.toLowerCase() === 'cancelled';
+              const isPending = order.status.toLowerCase() === 'pending';
               
               return (
                 <div key={order._id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
@@ -141,7 +182,7 @@ const DeliveryBoy = () => {
                   {/* Order Header */}
                   <div className={`p-4 ${bg} ${text} flex justify-between items-center`}>
                     <div className="font-bold text-lg">
-                      Order #{order.order._id.slice(-6)}
+                      Delivery for #{order.order._id.slice(-6)}
                     </div>
                     <div className="font-medium flex items-center space-x-2">
                       <FaClock />
@@ -151,45 +192,27 @@ const DeliveryBoy = () => {
 
                   {/* Order Details */}
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Customer & Address */}
+                    {/* Shop & Pickup */}
                     <div className="space-y-3">
                       <h3 className="font-semibold text-gray-700 flex items-center">
-                        <FaUser className="mr-2 text-red-500" /> Customer Details
+                        <FaMapMarkerAlt className="mr-2 text-red-500" /> Pickup Location
+                      </h3>
+                      <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                        <p className="font-medium">{order.shop.name}</p>
+                        <p className="text-gray-600">{order.shop.address}</p>
+                        <p className="font-bold pt-2 text-gray-800">Total: ₹{Math.round(order.total)}</p>
+                      </div>
+                    </div>
+
+                    {/* Customer & Drop-off */}
+                    <div className="space-y-3">
+                      <h3 className="font-semibold text-gray-700 flex items-center">
+                        <FaUser className="mr-2 text-red-500" /> Drop-off Details
                       </h3>
                       <div className="bg-gray-50 p-3 rounded-lg text-sm">
                         <p className="font-medium">{deliveryAddress.name}</p>
                         <p className="text-gray-600">{deliveryAddress.mobileNumber}</p>
-                        <p className="font-semibold text-gray-700 mt-2 flex items-center">
-                            <FaMapMarkerAlt className="mr-1 text-red-500" /> Delivery To:
-                        </p>
-                        <p className="text-gray-600">{deliveryAddress.addressLine}, {deliveryAddress.city}, {deliveryAddress.pincode}</p>
-                      </div>
-                    </div>
-
-                    {/* Shop & Items */}
-                    <div className="space-y-3">
-                      <h3 className="font-semibold text-gray-700 flex items-center">
-                        <FaBox className="mr-2 text-red-500" /> Shop & Items
-                      </h3>
-                      <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                        <p className="font-medium mb-1">From: {order.shop.name}</p>
-                        <ul className="space-y-1">
-                          {/* Note: order.order contains item details for the entire customer order */}
-                          {order.order.shopOrders?.find(so => so.shop?.name === order.shop.name)?.items?.map((item, index) => (
-                            <li key={item._id || index} className="flex justify-between border-t border-gray-200 pt-1">
-                                <span className="text-gray-700">{item.quantity} x {item.itemName || item.item?.name || 'Item'}</span>
-                                <span className="font-medium">₹{Math.round(item.total)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="flex justify-between font-bold pt-2 border-t border-gray-300 mt-2">
-                            <span>Shop Subtotal:</span>
-                            <span>₹{Math.round(order.subtotal || 0)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold pt-1">
-                            <span>Order Total:</span>
-                            <span>₹{Math.round(order.total || 0)}</span>
-                        </div>
+                        <p className="text-gray-600">{deliveryAddress.addressLine}, {deliveryAddress.city}</p>
                       </div>
                     </div>
                   </div>
@@ -197,57 +220,81 @@ const DeliveryBoy = () => {
                   {/* Actions */}
                   <div className="p-6 pt-0">
                     <h3 className="font-semibold text-gray-700 flex items-center mb-3">
-                        <FaTruck className="mr-2 text-red-500" /> Update Delivery Status
+                        <FaTruck className="mr-2 text-red-500" /> Update Status
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         
-                        {/* Action: Ready for Pickup */}
-                        <DeliveryButton 
-                            orderId={order._id} 
-                            currentStatus={order.status}
-                            targetStatus="ready_for_pickup"
-                            icon={<FaClock />}
-                            handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered || order.status.toLowerCase() === 'out_for_delivery' || order.status.toLowerCase() === 'delivered'}
-                            isLoading={processingOrder === order._id}
-                        />
+                        {/* Action: Accept/Reject (Only if pending) */}
+                        {isPending && (
+                            <>
+                                <DeliveryButton 
+                                    orderId={order._id} 
+                                    targetStatus="accepted"
+                                    icon={<FaCheckCircle />}
+                                    label="Accept Order"
+                                    handleUpdate={handleStatusUpdate}
+                                    isDisabled={isDelivered}
+                                    isLoading={processingOrder === order._id}
+                                />
+                                <DeliveryButton 
+                                    orderId={order._id} 
+                                    targetStatus="rejected"
+                                    icon={<FaBan />}
+                                    label="Reject Order"
+                                    handleUpdate={handleStatusUpdate}
+                                    isDisabled={isDelivered}
+                                    isLoading={processingOrder === order._id}
+                                    isDanger={true}
+                                />
+                            </>
+                        )}
 
-                        {/* Action: Out for Delivery */}
-                        <DeliveryButton 
-                            orderId={order._id} 
-                            currentStatus={order.status}
-                            targetStatus="out_for_delivery"
-                            icon={<FaTruck />}
-                            handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered || order.status.toLowerCase() === 'delivered' || order.status.toLowerCase() === 'cancelled'}
-                            isLoading={processingOrder === order._id}
-                        />
+                        {/* Action: Out for Delivery (Visible if accepted/preparing/ready) */}
+                        {!isPending && !isDelivered && (
+                            <>
+                                <DeliveryButton 
+                                    orderId={order._id} 
+                                    currentStatus={order.status}
+                                    targetStatus="ready_for_pickup"
+                                    icon={<FaClock />}
+                                    label="Ready for Pickup"
+                                    handleUpdate={handleStatusUpdate}
+                                    isDisabled={isDelivered || order.status.toLowerCase() === 'out_for_delivery'}
+                                    isLoading={processingOrder === order._id}
+                                />
 
-                        {/* Action: Delivered */}
-                        <DeliveryButton 
-                            orderId={order._id} 
-                            currentStatus={order.status}
-                            targetStatus="delivered"
-                            icon={<FaCheckCircle />}
-                            handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered}
-                            isLoading={processingOrder === order._id}
-                        />
+                                <DeliveryButton 
+                                    orderId={order._id} 
+                                    currentStatus={order.status}
+                                    targetStatus="out_for_delivery"
+                                    icon={<FaMotorcycle />}
+                                    label="Out for Delivery"
+                                    handleUpdate={handleStatusUpdate}
+                                    isDisabled={isDelivered || order.status.toLowerCase() === 'delivered' || order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() !== 'ready_for_pickup'}
+                                    isLoading={processingOrder === order._id}
+                                />
 
-                        {/* Action: Cancelled (Reject) - Can be used to reject an order on the spot */}
-                        <DeliveryButton 
-                            orderId={order._id} 
-                            currentStatus={order.status}
-                            targetStatus="cancelled"
-                            icon={<FaBan />}
-                            handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered}
-                            isLoading={processingOrder === order._id}
-                            isDanger={true}
-                        />
-
+                                {/* Action: Delivered */}
+                                <DeliveryButton 
+                                    orderId={order._id} 
+                                    currentStatus={order.status}
+                                    targetStatus="delivered"
+                                    icon={<FaCheckCircle />}
+                                    label="Delivered"
+                                    handleUpdate={handleStatusUpdate}
+                                    isDisabled={isDelivered || order.status.toLowerCase() !== 'out_for_delivery'}
+                                    isLoading={processingOrder === order._id}
+                                />
+                            </>
+                        )}
+                        
                         <div className="col-span-full pt-2">
-                          <p className="text-xs text-gray-500">Note: Tap to change status. Use "Ready for Pickup" after collecting the order from the shop.</p>
+                          <p className="text-xs text-gray-500">
+                            {isPending 
+                                ? 'Tap Accept to confirm you will deliver this order.'
+                                : 'Update status after pickup and drop-off.'
+                            }
+                          </p>
                         </div>
                     </div>
                   </div>
@@ -260,8 +307,8 @@ const DeliveryBoy = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <h2 className="text-xl font-semibold mb-2">Nooo Active Orders</h2>
-            <p className="text-gray-600 mb-4">You have no assigned deliveries at the moment. Please check back later.</p>
+            <h2 className="text-xl font-semibold mb-2">No Active Deliveries</h2>
+            <p className="text-gray-600 mb-4">New delivery requests will appear here when assigned by shops.</p>
           </div>
         )}
       </div>
@@ -270,40 +317,48 @@ const DeliveryBoy = () => {
 };
 
 // Helper component for the status buttons
-const DeliveryButton = ({ orderId, currentStatus, targetStatus, icon, handleUpdate, isDisabled, isLoading, isDanger = false }) => {
+const DeliveryButton = ({ orderId, currentStatus, targetStatus, icon, label, handleUpdate, isDisabled, isLoading, isDanger = false }) => {
     const { bg, text } = getStatusColor(targetStatus);
-    const isCurrentStatus = currentStatus.toLowerCase() === targetStatus.toLowerCase();
+    const isCurrentStatus = currentStatus?.toLowerCase() === targetStatus.toLowerCase();
     
-    let buttonClass = '';
+    let buttonClass = 'transition-all duration-200 flex items-center justify-center h-full rounded-md px-3 py-2 text-xs font-medium';
     
     if (isDisabled) {
-        buttonClass = isCurrentStatus ? 
-            `${bg} ${text} shadow-md opacity-100` : 
-            'bg-gray-300 text-gray-600 cursor-not-allowed opacity-70';
+        buttonClass += isCurrentStatus ? 
+            ` ${bg} ${text} shadow-md opacity-100 cursor-default` : 
+            ' bg-gray-200 text-gray-500 cursor-not-allowed';
     } else {
-        buttonClass = isDanger ? 
-            'bg-white text-red-600 hover:bg-red-50 border border-red-300' : 
-            `${bg.replace('600', '500')} ${text.replace('white', 'white')} hover:${bg.replace('600', '700')} shadow-md`;
+        if (isDanger) {
+            buttonClass += ' bg-red-600 text-white hover:bg-red-700 shadow-md';
+        } else {
+            // Use specific colors for active statuses
+            let activeBg = isCurrentStatus ? bg : 'bg-white border border-gray-200';
+            let activeText = isCurrentStatus ? text : 'text-gray-700 hover:text-red-600';
+            let hoverBg = isCurrentStatus ? `hover:${bg.replace('600', '700')}` : 'hover:bg-red-50';
+            buttonClass += ` ${activeBg} ${activeText} ${hoverBg}`;
+        }
     }
+
+    const buttonLabel = isCurrentStatus && !isLoading ? label.split(' ')[0] + 'ed' : label;
 
     return (
         <button
             onClick={() => handleUpdate(orderId, targetStatus)}
-            className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center h-full ${buttonClass}`}
-            disabled={isDisabled}
+            className={buttonClass}
+            disabled={isDisabled || isLoading}
         >
-            {isLoading && isCurrentStatus && targetStatus === 'delivered' ? ( // Only show loading spinner for the target status if it's the current action
+            {isLoading && !isDisabled ? (
                 <span className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Updating...
+                    {buttonLabel.split(' ')[0] + 'ing...'}
                 </span>
             ) : (
                 <>
                     {icon && <span className="mr-2">{icon}</span>}
-                    <span className="capitalize">{targetStatus.replace(/_/g, ' ')}</span>
+                    <span className="capitalize">{buttonLabel}</span>
                 </>
             )}
         </button>

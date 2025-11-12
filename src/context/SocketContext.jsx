@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { useSelector } from 'react-redux';
 
 const SocketContext = createContext();
 
@@ -10,6 +11,7 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
+  const { userData } = useSelector((state) => state.user); // Get user data from Redux
 
   useEffect(() => {
     // Create socket connection
@@ -36,6 +38,15 @@ export const SocketProvider = ({ children }) => {
       socketInstance.disconnect();
     };
   }, []);
+
+  // New useEffect: Register user with socket when connection is ready AND user data is available
+  useEffect(() => {
+    if (connected && socket && userData?._id) {
+        console.log(`Attempting to register user ${userData._id} with socket`);
+        socket.emit('register', userData._id);
+    }
+  }, [connected, socket, userData]);
+
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>

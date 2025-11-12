@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getShopOrders, updateShopOrderStatus } from '../services/orderApi';
 import { toast } from 'react-hot-toast';
-import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync } from 'react-icons/fa';
+import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync, FaTruck } from 'react-icons/fa';
 
 export default function ShopOrders() {
   const [shopOrders, setShopOrders] = useState([]);
@@ -20,7 +20,7 @@ export default function ShopOrders() {
       const data = await getShopOrders();
       setShopOrders(data.shopOrders || []);
       if (data.shopOrders && data.shopOrders.length > 0) {
-        toast.success('Orders loaded successfully');
+        // toast.success('Orders loaded successfully'); // Commented out to reduce spam
       }
     } catch (err) {
       setError(err.message || 'Failed to load shop orders');
@@ -32,12 +32,13 @@ export default function ShopOrders() {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'Delivered': return 'bg-green-500';
-      case 'Accepted': return 'bg-blue-500';
-      case 'Preparing': return 'bg-yellow-500';
-      case 'Out for Delivery': return 'bg-indigo-500';
-      case 'Rejected':
-      case 'Cancelled': return 'bg-red-500'; 
+      case 'delivered': return 'bg-green-500';
+      case 'accepted': return 'bg-blue-500';
+      case 'preparing': return 'bg-yellow-500';
+      case 'out_for_delivery': return 'bg-indigo-500';
+      case 'rejected':
+      case 'cancelled': return 'bg-red-500'; 
+      case 'ready_for_pickup': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };
@@ -45,13 +46,15 @@ export default function ShopOrders() {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       setProcessingOrder(orderId);
-      await updateShopOrderStatus(orderId, newStatus);
+      const res = await updateShopOrderStatus(orderId, newStatus);
+      
+      // Update local state with the returned shopOrder object
       setShopOrders(prevOrders =>
         prevOrders.map(order =>
-          order._id === orderId ? { ...order, status: newStatus } : order
+          order._id === orderId ? res.shopOrder : order
         )
       );
-      toast.success(`Order status updated to ${newStatus}`, {
+      toast.success(`Order status updated to ${newStatus.replace(/_/g, ' ')}`, {
         icon: '✅',
         style: {
           borderRadius: '10px',
@@ -61,7 +64,7 @@ export default function ShopOrders() {
       });
     } catch (err) {
       console.error('Failed to update status:', err);
-      toast.error('Failed to update order status');
+      toast.error(err?.message || 'Failed to update order status');
     } finally {
       setProcessingOrder(null);
     }
@@ -97,11 +100,12 @@ export default function ShopOrders() {
           <div className="flex items-center justify-between md:justify-end">
             <div className="flex overflow-x-auto pb-2 w-full">
               <div className="flex w-full min-w-max">
+                {/* Status filters (keep simplified for space) */}
                 <button 
                   onClick={() => setStatusFilter('all')} 
                   className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'all' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 rounded-l-md flex-1`}
                 >
-                  All Orders
+                  All
                 </button>
                 <button 
                   onClick={() => setStatusFilter('pending')} 
@@ -111,21 +115,15 @@ export default function ShopOrders() {
                 </button>
                 <button 
                   onClick={() => setStatusFilter('accepted')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'accepted' ? 'bg-purple-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'accepted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
                 >
                   Accepted
                 </button>
                 <button 
                   onClick={() => setStatusFilter('preparing')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'preparing' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'preparing' ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
                 >
                   Preparing
-                </button>
-                <button 
-                  onClick={() => setStatusFilter('out_for_delivery')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'out_for_delivery' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
-                >
-                  Out for Delivery
                 </button>
                 <button 
                   onClick={() => setStatusFilter('delivered')} 
@@ -155,7 +153,7 @@ export default function ShopOrders() {
           <p className="text-gray-600 mb-4">
             {statusFilter === 'all' 
               ? "You don't have any orders yet. Orders will appear here when customers place them." 
-              : `You don't have any ${statusFilter} orders at the moment.`}
+              : `You don't have any ${statusFilter.replace(/_/g, ' ')} orders at the moment.`}
           </p>
           <button 
             onClick={fetchShopOrders}
@@ -188,15 +186,27 @@ export default function ShopOrders() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="font-bold text-lg">₹{so.total || 0}</div>
+                    <div className="font-bold text-lg">₹{Math.round(so.total || 0)}</div>
                     <div className={`text-xs px-2 py-1 rounded-full text-white ${getStatusColor(so.status)}`}>
-                      {so.status || 'Processing'}
+                      {so.status?.replace(/_/g, ' ') || 'Processing'}
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Delivery Boy Info */}
+                {so.deliveryBoy && (
+                    <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
+                        <h3 className="font-medium text-orange-700 mb-2 flex items-center">
+                            <FaTruck className="mr-2" /> Assigned Delivery
+                        </h3>
+                        <p className="text-gray-800 font-medium">{so.deliveryBoy.fullName}</p>
+                        <p className="text-gray-600 text-sm">Mobile: {so.deliveryBoy.mobile || 'N/A'}</p>
+                    </div>
+                )}
+                
                 {/* Customer Info */}
                 <div className="bg-gray-50 p-3 rounded-md">
                   <h3 className="font-medium text-gray-700 mb-2 flex items-center">
@@ -220,7 +230,7 @@ export default function ShopOrders() {
                 </div>
 
                 {/* Order Items */}
-                <div className="md:col-span-2">
+                <div className="md:col-span-1">
                   <h3 className="font-medium text-gray-700 mb-2 flex items-center">
                     <FaBox className="mr-2 text-red-500" />
                     Order Items
@@ -232,27 +242,14 @@ export default function ShopOrders() {
                           <span className="bg-red-100 text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">
                             {it.quantity}
                           </span>
-                          <span>{it.item?.name}</span>
+                          <span>{it.itemName || it.item?.name || 'Item'}</span>
                         </div>
-                        <span className="font-medium">₹{Math.round((it.priceAtPurchase || it.item?.price || it.pricePerUnit || 0) * (it.quantity || 0))}</span>
+                        <span className="font-medium">₹{Math.round(it.total || 0)}</span>
                       </li>
                     ))}
                   </ul>
                   
                   <div className="mt-4 border-t pt-3 space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal:</span>
-                      <span>₹{Math.round(so.subtotal || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax:</span>
-                      <span>₹{Math.round(so.tax) || 0}</span>
-                      
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Delivery Fee:</span>
-                      <span>₹{Math.round(so.deliveryFee || 0)}</span>
-                    </div>
                     <div className="flex justify-between font-bold pt-2 border-t">
                       <span>Total:</span>
                       <span>₹{Math.round(so.total) || 0}</span>
@@ -270,29 +267,17 @@ export default function ShopOrders() {
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => handleStatusChange(so._id, 'accepted')}
+                    // Enable only for pending status to accept and notify DB
                     className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'accepted' 
-                        ? 'bg-purple-600 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-gray-200'
+                      so.status === 'pending'
+                        ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
+                        : so.status === 'accepted'
+                        ? 'bg-purple-600 text-white shadow-md cursor-default'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={processingOrder === so._id}
+                    disabled={processingOrder === so._id || so.status !== 'pending'}
                   >
-                    {processingOrder === so._id ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Updating...
-                      </span>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Accept
-                      </>
-                    )}
+                    {processingOrder === so._id ? 'Accepting...' : so.status === 'accepted' ? 'Accepted' : 'Accept Order'}
                   </button>
                   
                   <button 
@@ -302,51 +287,21 @@ export default function ShopOrders() {
                         ? 'bg-yellow-500 text-white shadow-md' 
                         : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
                     }`}
-                    disabled={processingOrder === so._id}
+                    disabled={processingOrder === so._id || so.status === 'pending'} // Disable if pending
                   >
-                    {processingOrder === so._id ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Updating...
-                      </span>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Preparing
-                      </>
-                    )}
+                    {processingOrder === so._id ? 'Updating...' : 'Preparing'}
                   </button>
                   
                   <button 
-                    onClick={() => handleStatusChange(so._id, 'out_for_delivery')}
+                    onClick={() => handleStatusChange(so._id, 'ready_for_pickup')}
                     className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'out_for_delivery' 
-                        ? 'bg-blue-600 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200'
+                      so.status === 'ready_for_pickup' 
+                        ? 'bg-orange-500 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200'
                     }`}
-                    disabled={processingOrder === so._id}
+                    disabled={processingOrder === so._id || so.status === 'pending' || so.status === 'out_for_delivery' || so.status === 'delivered'}
                   > 
-                    {processingOrder === so._id ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Updating...
-                      </span>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Out for Delivery
-                      </>
-                    )}
+                    {processingOrder === so._id ? 'Updating...' : 'Ready for Pickup'}
                   </button>
                   
                   <button 
@@ -356,26 +311,15 @@ export default function ShopOrders() {
                         ? 'bg-green-600 text-white shadow-md' 
                         : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
                     }`}
-                    disabled={processingOrder === so._id}
+                    disabled={processingOrder === so._id || so.status === 'ready_for_pickup'} // Owner can mark delivered only if Ready for Pickup (if DB fails to update)
                   >
-                    {processingOrder === so._id ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Updating...
-                      </span>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Delivered
-                      </>
-                    )}
+                    {processingOrder === so._id ? 'Updating...' : 'Delivered'}
                   </button>
+                  
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                    Note: Accepting the order will notify the delivery boy.
+                </p>
               </div>
             </div>
           ))}
