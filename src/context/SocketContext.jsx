@@ -39,14 +39,13 @@ export const SocketProvider = ({ children }) => {
     };
   }, []);
 
-  // New useEffect: Register user with socket when connection is ready AND user data is available
-  useEffect(() => {
-    if (connected && socket && userData?._id) {
-        console.log(`Attempting to register user ${userData._id} with socket`);
-        socket.emit('register', userData._id);
-    }
-  }, [connected, socket, userData]);
-
+      // New useEffect: Register user with socket when connection is ready AND user data is available
+      useEffect(() => {
+          if (socket && userData?._id) {
+              console.log(`Attempting to register user ${userData._id} with socket`);
+              socket.emit('register', userData._id);
+          }
+      }, [socket, userData]);
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>
