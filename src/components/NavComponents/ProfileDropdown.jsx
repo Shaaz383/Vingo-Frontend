@@ -6,7 +6,8 @@ import {
   FaHistory,
   FaHeart,
   FaCog,
-  FaStore 
+  FaStore,
+  FaTruck 
 } from 'react-icons/fa';
 
 const ProfileDropdown = ({
@@ -15,6 +16,7 @@ const ProfileDropdown = ({
   toggleProfile,
   userData,
   isOwner,
+  isDeliveryBoy, // New prop added
   hasShop,
   handleLogout,
   handleNavigate,
@@ -24,8 +26,10 @@ const ProfileDropdown = ({
   // Handlers to close dropdown after navigation
   const navigateAndClose = (path) => {
     handleNavigate(path);
-    // toggleProfile(); // Not needed as handleNavigate also closes the profile dropdown in main Nav.jsx
   };
+
+  // Determine role for display purposes
+  const roleLabel = isOwner ? 'Owner' : isDeliveryBoy ? 'Delivery Boy' : 'User';
 
   return (
     <div className="hidden lg:flex items-center">
@@ -56,6 +60,7 @@ const ProfileDropdown = ({
                 <div>
                   <p className="text-sm font-semibold text-gray-900 truncate">{userData?.fullName || 'User'}</p>
                   <p className="text-xs text-gray-500 truncate">{userData?.email}</p>
+                  <span className="text-xs text-red-500 font-medium capitalize">{roleLabel}</span>
                 </div>
               </div>
             </div>
@@ -67,8 +72,21 @@ const ProfileDropdown = ({
                 <span>Profile</span>
               </button>
 
+              {/* Delivery Boy Links */}
+              {isDeliveryBoy && (
+                <>
+                  <hr className="my-1 border-gray-100" />
+                  <button onClick={() => navigateAndClose('/delivery')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
+                    <FaTruck className="w-4" />
+                    <span>My Deliveries</span>
+                  </button>
+                  <hr className="my-1 border-gray-100" />
+                </>
+              )}
+
+
               {/* OWNER Links */}
-              {isOwner && (
+              {isOwner && !isDeliveryBoy && (
                 <>
                   <hr className="my-1 border-gray-100" />
                   {hasShop && (
@@ -81,10 +99,10 @@ const ProfileDropdown = ({
                 </>
               )}
 
-              {/* User-Only Links */}
-              {!isOwner && (
+              {/* Customer Links */}
+              {!isOwner && !isDeliveryBoy && (
                 <>
-                  <button onClick={() => navigateAndClose('/order-history')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <button onClick={() => navigateAndClose('/my-orders')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <FaHistory className="text-gray-400 w-4" />
                     <span>Order History</span>
                   </button>

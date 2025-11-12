@@ -71,7 +71,17 @@ const Nav = () => {
   
   // Computed values
   const isOwner = userData?.role === 'owner';
+  const isDeliveryBoy = userData?.role === 'deliveryBoy'; // New: check for delivery role
   const hasShop = isOwner && myShopData !== null && myShopData !== undefined;
+
+  // Sync current city state with Redux store on mount/city change
+  useEffect(() => {
+    if (city) {
+      setLocation(city);
+    } else if (detectedCity) {
+      setLocation(detectedCity);
+    }
+  }, [city, detectedCity]);
 
   // --- Handlers & Effects ---
 
@@ -80,13 +90,16 @@ const Nav = () => {
     if (profileRef.current && !profileRef.current.contains(event.target)) {
       setIsProfileOpen(false);
     }
-    if (
-      (cityRef.current && !cityRef.current.contains(event.target)) &&
-      (cityRefMobile.current && !cityRefMobile.current.contains(event.target))
-    ) {
-      setIsCitySelectorOpen(false);
+    // Only check for city selector if user is not a delivery boy
+    if (!isDeliveryBoy) {
+      if (
+        (cityRef.current && !cityRef.current.contains(event.target)) &&
+        (cityRefMobile.current && !cityRefMobile.current.contains(event.target))
+      ) {
+        setIsCitySelectorOpen(false);
+      }
     }
-  }, []);
+  }, [isDeliveryBoy]);
 
   // Update useEffect to use the memoized handleClickOutside
   useEffect(() => {
@@ -146,14 +159,6 @@ const Nav = () => {
     navigate(path);
   }, [navigate]);
     
-  // Toggle functions
-  // Remove these duplicate declarations since they're already defined with useCallback above
-  // Delete these lines:
-  // const toggleProfile = () => setIsProfileOpen((prev) => !prev);
-  // const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
-  // const toggleCitySelector = () => setIsCitySelectorOpen((prev) => !prev);
-  // const handleCitySearchChange = (e) => setCitySearch(e.target.value);
-
   const handleCitySelect = useCallback((selectedCity) => {
     dispatch(setCity(selectedCity));
     setLocation(selectedCity);
@@ -174,26 +179,29 @@ const Nav = () => {
           {/* Desktop Navigation - Center/Right Side */}
           <div className="hidden lg:flex items-center justify-end space-x-6 flex-1">
             
-            {/* Desktop Location Selector */}
-            <CitySelectorDropdown
-              cityRef={cityRef}
-              isCitySelectorOpen={isCitySelectorOpen}
-              toggleCitySelector={toggleCitySelector}
-              location={location}
-              cityLoading={cityLoading}
-              cityError={cityError}
-              citySearch={citySearch}
-              handleCitySearchChange={handleCitySearchChange}
-              handleCitySelect={handleCitySelect}
-              requestCity={requestCity}
-              INDIAN_CITIES={INDIAN_CITIES}
-              isOwner={isOwner} // Conditional visibility for desktop
-              isMobile={false} // Indicates desktop version
-            />
+            {/* Desktop Location Selector (Hidden for Delivery Boy) */}
+            {!isDeliveryBoy && (
+              <CitySelectorDropdown
+                cityRef={cityRef}
+                isCitySelectorOpen={isCitySelectorOpen}
+                toggleCitySelector={toggleCitySelector}
+                location={location}
+                cityLoading={cityLoading}
+                cityError={cityError}
+                citySearch={citySearch}
+                handleCitySearchChange={handleCitySearchChange}
+                handleCitySelect={handleCitySelect}
+                requestCity={requestCity}
+                INDIAN_CITIES={INDIAN_CITIES}
+                isOwner={isOwner} // Conditional visibility for owner
+                isMobile={false} 
+              />
+            )}
 
-            {/* Desktop Actions (Search, Cart, Owner Buttons) */}
+            {/* Desktop Actions (Search, Cart, Owner/Delivery Buttons) */}
             <DesktopActions
               isOwner={isOwner}
+              isDeliveryBoy={isDeliveryBoy} // Pass new prop
               hasShop={hasShop}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -210,6 +218,7 @@ const Nav = () => {
               toggleProfile={toggleProfile}
               userData={userData}
               isOwner={isOwner}
+              isDeliveryBoy={isDeliveryBoy} // Pass new prop
               hasShop={hasShop}
               handleLogout={handleLogout}
               handleNavigate={handleNavigate}
@@ -220,6 +229,7 @@ const Nav = () => {
           {/* Mobile Icons and Menu Button */}
           <MobileIcons
             isOwner={isOwner}
+            isDeliveryBoy={isDeliveryBoy} // Pass new prop
             hasShop={hasShop}
             ordersCount={ORDERS_COUNT_STATIC}
             cartCount={cartItemCount}
@@ -234,6 +244,7 @@ const Nav = () => {
           isMobileMenuOpen={isMobileMenuOpen}
           mobileMenuRef={mobileMenuRef}
           isOwner={isOwner}
+          isDeliveryBoy={isDeliveryBoy} // Pass new prop
           hasShop={hasShop}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -241,7 +252,7 @@ const Nav = () => {
           handleNavigate={handleNavigate}
           cartCount={cartItemCount}
           ordersCount={ORDERS_COUNT_STATIC}
-          handleLogout={handleLogout}  // Add this line
+          handleLogout={handleLogout}
           // Props for Mobile City Selector
           cityRefMobile={cityRefMobile}
           isCitySelectorOpen={isCitySelectorOpen}

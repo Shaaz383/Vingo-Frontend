@@ -5,13 +5,15 @@ import {
   FaTimes, 
   FaPlus, 
   FaClock, 
-  FaStore 
+  FaStore,
+  FaTruck // Added FaTruck icon
 } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { selectCartItemCount } from '../../redux/cartSlice';
 
 const MobileIcons = ({
   isOwner,
+  isDeliveryBoy, // New prop added
   hasShop,
   ordersCount,
   isMobileMenuOpen,
@@ -21,8 +23,31 @@ const MobileIcons = ({
   const cartCount = useSelector(selectCartItemCount);
   const handleOwnerOrdersClick = () => handleNavigate('/shop/orders');
   const handleCreateShopClick = () => handleNavigate('/owner/create-shop');
-  const handleAddFoodClick = () => handleNavigate('/owner/add-food');
+  const handleAddFoodClick = () => handleNavigate('/add-food-item');
+  const handleDeliveryOrdersClick = () => handleNavigate('/delivery');
 
+  // --- Delivery Boy: Show Deliveries Icon ---
+  if (isDeliveryBoy) {
+    return (
+      <div className="flex items-center space-x-3 lg:hidden">
+        <button
+          onClick={handleDeliveryOrdersClick}
+          className="relative p-2 text-gray-700 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-full"
+          title="My Assigned Deliveries" 
+        >
+          <FaTruck className="text-xl"/>
+          {/* You might want to show a badge for new/pending orders here later */}
+        </button>
+        
+        {/* Mobile Menu Button */}
+        <button onClick={toggleMobileMenu} className="p-2 text-gray-700 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-lg">
+          {isMobileMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+        </button>
+      </div>
+    );
+  }
+
+  // --- Owner/User Logic (Existing) ---
   return (
     <div className="flex items-center space-x-3 lg:hidden">
       
