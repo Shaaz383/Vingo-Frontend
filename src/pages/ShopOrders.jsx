@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getShopOrders, updateShopOrderStatus } from '../services/orderApi';
 import { toast } from 'react-hot-toast';
 import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync, FaTruck } from 'react-icons/fa';
-import { useSocket } from '../context/SocketContext'; // Import useSocket
+import { useSocket } from '../context/SocketContext'; 
 
 export default function ShopOrders() {
   const [shopOrders, setShopOrders] = useState([]);
@@ -10,16 +10,13 @@ export default function ShopOrders() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [processingOrder, setProcessingOrder] = useState(null);
-  const { socket } = useSocket(); // Get socket instance
+  const { socket } = useSocket(); 
 
   const fetchShopOrders = async () => {
     try {
       setLoading(true);
       const data = await getShopOrders();
       setShopOrders(data.shopOrders || []);
-      // if (data.shopOrders && data.shopOrders.length > 0) {
-      //   // toast.success('Orders loaded successfully'); // Commented out to reduce spam
-      // }
     } catch (err) {
       setError(err.message || 'Failed to load shop orders');
       toast.error('Failed to load orders');
@@ -36,41 +33,47 @@ export default function ShopOrders() {
   useEffect(() => {
     if (!socket) return;
 
+    // Updates when status changes or DB is assigned
     const handleOrderStatusUpdate = (data) => {
-      // Data contains { orderId, shopOrderId, status, shopId, deliveryBoy }
       setShopOrders(prevOrders =>
         prevOrders.map(order =>
           order._id === data.shopOrderId
             ? { 
                 ...order, 
                 status: data.status, 
-                deliveryBoy: data.deliveryBoy || order.deliveryBoy // Update deliveryBoy if provided
+                deliveryBoy: data.deliveryBoy || order.deliveryBoy 
               } 
             : order
         )
       );
     };
     
-    // Listen for when a DB accepts an order
+    // Updates when a new order is placed (sent only to owner in placeOrder now)
+    const handleNewShopOrder = (data) => {
+        toast('New order received!', { icon: '🔔' });
+        // Trigger a fetch to get the fully populated order details
+        fetchShopOrders(); 
+    };
+
+    // Updates when a DB accepts an order
     const handleOrderAcceptedByDB = (data) => {
-        // Data contains { shopOrderId, orderId, deliveryBoy, shopName, status }
-        toast.success(`Order #${data.orderId?.slice(-6)} accepted by ${data.deliveryBoy?.fullName}!`, {
+        toast.success(`Order #${data.orderId?.slice(-6)} accepted by a Delivery Boy!`, {
             icon: '🏍️',
             style: { borderRadius: '10px', background: '#4c1d95', color: '#fff' },
         });
-        // The handleOrderStatusUpdate will also fire due to the general socket emission in the backend,
-        // ensuring the deliveryBoy field is updated here.
         handleOrderStatusUpdate(data);
     };
 
     socket.on('orderStatusUpdated', handleOrderStatusUpdate);
-    socket.on('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB); // Listen for DB acceptance event
+    socket.on('newShopOrder', handleNewShopOrder);
+    socket.on('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB);
 
     return () => {
       socket.off('orderStatusUpdated', handleOrderStatusUpdate);
+      socket.off('newShopOrder', handleNewShopOrder);
       socket.off('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB);
     };
-  }, [socket]); // Added socket as dependency
+  }, [socket, fetchShopOrders]); // Included fetchShopOrders in dependency array
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -90,7 +93,6 @@ export default function ShopOrders() {
       setProcessingOrder(orderId);
       const res = await updateShopOrderStatus(orderId, newStatus);
       
-      // Update local state with the returned shopOrder object
       setShopOrders(prevOrders =>
         prevOrders.map(order =>
           order._id === orderId ? res.shopOrder : order
@@ -106,7 +108,6 @@ export default function ShopOrders() {
       });
     } catch (err) {
       console.error('Failed to update status:', err);
-      // Display the specific message from the backend if available
       const errorMessage = err?.message || err?.response?.data?.message || 'Failed to update order status';
       toast.error(errorMessage);
     } finally {
@@ -183,7 +184,7 @@ export default function ShopOrders() {
           </div>
         </div>
       </div>
-
+      
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
@@ -254,7 +255,9 @@ export default function ShopOrders() {
                         <h3 className="font-medium text-blue-700 mb-2 flex items-center">
                             <FaTruck className="mr-2" /> Delivery Assignment
                         </h3>
-                        <p className="text-gray-800 font-medium text-sm">Waiting for a Delivery Boy to accept this order...</p>
+                        <p className="text-gray-800 font-medium text-sm">
+                            {so.status === 'pending' ? 'Waiting for your acceptance to start preparation.' : 'Waiting for a Delivery Boy to accept this order...'}
+                        </p>
                     </div>
                 )}
                 
@@ -317,37 +320,68 @@ export default function ShopOrders() {
                 
                 <div className="grid grid-cols-2 gap-2">
                   
-                  {/* Preparing Button - Available if PENDING, ACCEPTED, or PREPARING */}
-                  <button 
-                    onClick={() => handleStatusChange(so._id, 'preparing')}
-                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'preparing' 
-                        ? 'bg-yellow-500 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
-                    }`}
-                    // Owner can only move past 'pending' to 'preparing' or stay there.
-                    disabled={processingOrder === so._id || ['out_for_delivery', 'delivered', 'cancelled'].includes(so.status)} 
-                  >
-                    {processingOrder === so._id && so.status !== 'preparing' ? 'Updating...' : so.status === 'preparing' ? 'Preparing' : 'Start Preparing'}
-                  </button>
+                  {/* OWNER ACTION: ACCEPT/START PREPARING BUTTON - Only visible/enabled when status is PENDING */}
+                  {so.status === 'pending' && (
+                    <button 
+                      onClick={() => handleStatusChange(so._id, 'preparing')} // Owner accepts by moving to 'preparing'
+                      className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center col-span-2 ${
+                        processingOrder === so._id
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-purple-600 text-white shadow-md hover:bg-purple-700"
+                      }`}
+                      disabled={processingOrder === so._id}
+                    >
+                      {processingOrder === so._id ? 'Accepting...' : 'Accept & Start Preparing'}
+                    </button>
+                  )}
+
+                  {/* PREPARING BUTTON: Visible/Enabled when status is 'accepted' (by DB) or 'preparing' */}
+                  {(so.status === 'accepted' || so.status === 'preparing') && (
+                    <button 
+                      onClick={() => handleStatusChange(so._id, 'preparing')}
+                      className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                        so.status === 'preparing' 
+                          ? 'bg-yellow-500 text-white shadow-md' 
+                          : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
+                      }`}
+                      disabled={processingOrder === so._id || ['out_for_delivery', 'delivered', 'cancelled'].includes(so.status)} 
+                    >
+                      {processingOrder === so._id ? 'Updating...' : so.status === 'preparing' ? 'Preparing' : 'Set Preparing'}
+                    </button>
+                  )}
                   
-                  {/* Ready for Pickup Button - Available after accepted/preparing AND only if DB is assigned */}
-                  <button 
-                    onClick={() => handleStatusChange(so._id, 'ready_for_pickup')}
-                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'ready_for_pickup' 
-                        ? 'bg-orange-500 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200'
-                    }`}
-                    // Disabled if: processing, or has already passed this stage, or DB not assigned.
-                    disabled={processingOrder === so._id || ['pending', 'out_for_delivery', 'delivered', 'cancelled'].includes(so.status) || !so.deliveryBoy}
-                  > 
-                    {processingOrder === so._id && so.status !== 'ready_for_pickup' ? 'Updating...' : so.status === 'ready_for_pickup' ? 'Ready for Pickup' : 'Ready for Pickup'}
-                  </button>
+                  {/* Ready for Pickup Button: Enabled only if DB is assigned AND status is 'preparing' or 'accepted' */}
+                  {(so.status === 'preparing' || so.status === 'accepted') && so.deliveryBoy && (
+                    <button 
+                      onClick={() => handleStatusChange(so._id, 'ready_for_pickup')}
+                      className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                        so.status === 'ready_for_pickup' 
+                          ? 'bg-orange-500 text-white shadow-md' 
+                          : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200'
+                      }`}
+                      // Disabled if processing, or DB not assigned, or already set to ready
+                      disabled={processingOrder === so._id || so.status === 'ready_for_pickup' || !so.deliveryBoy}
+                    > 
+                      {processingOrder === so._id ? 'Updating...' : 'Ready for Pickup'}
+                    </button>
+                  )}
+
+                  {/* CANCELLATION: Add an option for the owner to cancel if status is still pending/preparing and no DB assigned */}
+                  {so.status !== 'delivered' && so.status !== 'cancelled' && !so.deliveryBoy && (
+                       <button 
+                          onClick={() => handleStatusChange(so._id, 'cancelled')}
+                          className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
+                              'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                          } ${so.status !== 'pending' ? 'col-span-1' : 'col-span-2'}`}
+                          disabled={processingOrder === so._id || so.deliveryBoy} // Cannot cancel if DB is assigned
+                        >
+                          {processingOrder === so._id ? 'Cancelling...' : 'Cancel Order'}
+                        </button>
+                  )}
                   
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                    Note: A Delivery Boy must accept the order (status becomes 'accepted') and be assigned before it can be marked 'Ready for Pickup'. The Delivery Boy handles 'Out for Delivery' and 'Delivered'.
+                    Note: Accepting the order (by setting to **Preparing**) notifies all Delivery Boys to bid for assignment.
                 </p>
               </div>
             </div>
