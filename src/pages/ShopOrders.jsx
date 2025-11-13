@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getShopOrders, updateShopOrderStatus } from '../services/orderApi';
 import { toast } from 'react-hot-toast';
 import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync, FaTruck } from 'react-icons/fa';
+import { useSocket } from '../context/SocketContext'; // Import useSocket
 
 export default function ShopOrders() {
   const [shopOrders, setShopOrders] = useState([]);
@@ -9,19 +10,16 @@ export default function ShopOrders() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [processingOrder, setProcessingOrder] = useState(null);
-
-  useEffect(() => {
-    fetchShopOrders();
-  }, []);
+  const { socket } = useSocket(); // Get socket instance
 
   const fetchShopOrders = async () => {
     try {
       setLoading(true);
       const data = await getShopOrders();
       setShopOrders(data.shopOrders || []);
-      if (data.shopOrders && data.shopOrders.length > 0) {
-        // toast.success('Orders loaded successfully'); // Commented out to reduce spam
-      }
+      // if (data.shopOrders && data.shopOrders.length > 0) {
+      //   // toast.success('Orders loaded successfully'); // Commented out to reduce spam
+      // }
     } catch (err) {
       setError(err.message || 'Failed to load shop orders');
       toast.error('Failed to load orders');
@@ -29,6 +27,50 @@ export default function ShopOrders() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchShopOrders();
+  }, []);
+
+  // Socket listener for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleOrderStatusUpdate = (data) => {
+      // Data contains { orderId, shopOrderId, status, shopId, deliveryBoy }
+      setShopOrders(prevOrders =>
+        prevOrders.map(order =>
+          order._id === data.shopOrderId
+            ? { 
+                ...order, 
+                status: data.status, 
+                deliveryBoy: data.deliveryBoy || order.deliveryBoy // Update deliveryBoy if provided
+              } 
+            : order
+        )
+      );
+    };
+    
+    // Listen for when a DB accepts an order
+    const handleOrderAcceptedByDB = (data) => {
+        // Data contains { shopOrderId, orderId, deliveryBoy, shopName, status }
+        toast.success(`Order #${data.orderId?.slice(-6)} accepted by ${data.deliveryBoy?.fullName}!`, {
+            icon: '🏍️',
+            style: { borderRadius: '10px', background: '#4c1d95', color: '#fff' },
+        });
+        // The handleOrderStatusUpdate will also fire due to the general socket emission in the backend,
+        // ensuring the deliveryBoy field is updated here.
+        handleOrderStatusUpdate(data);
+    };
+
+    socket.on('orderStatusUpdated', handleOrderStatusUpdate);
+    socket.on('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB); // Listen for DB acceptance event
+
+    return () => {
+      socket.off('orderStatusUpdated', handleOrderStatusUpdate);
+      socket.off('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB);
+    };
+  }, [socket]); // Added socket as dependency
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -64,7 +106,9 @@ export default function ShopOrders() {
       });
     } catch (err) {
       console.error('Failed to update status:', err);
-      toast.error(err?.message || 'Failed to update order status');
+      // Display the specific message from the backend if available
+      const errorMessage = err?.message || err?.response?.data?.message || 'Failed to update order status';
+      toast.error(errorMessage);
     } finally {
       setProcessingOrder(null);
     }
@@ -197,13 +241,20 @@ export default function ShopOrders() {
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 {/* Delivery Boy Info */}
-                {so.deliveryBoy && (
+                {so.deliveryBoy ? (
                     <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
                         <h3 className="font-medium text-orange-700 mb-2 flex items-center">
                             <FaTruck className="mr-2" /> Assigned Delivery
                         </h3>
                         <p className="text-gray-800 font-medium">{so.deliveryBoy.fullName}</p>
                         <p className="text-gray-600 text-sm">Mobile: {so.deliveryBoy.mobile || 'N/A'}</p>
+                    </div>
+                ) : (
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <h3 className="font-medium text-blue-700 mb-2 flex items-center">
+                            <FaTruck className="mr-2" /> Delivery Assignment
+                        </h3>
+                        <p className="text-gray-800 font-medium text-sm">Waiting for a Delivery Boy to accept this order...</p>
                     </div>
                 )}
                 
@@ -265,21 +316,8 @@ export default function ShopOrders() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={() => handleStatusChange(so._id, 'accepted')}
-                    // Enable only for pending status to accept and notify DB
-                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'pending'
-                        ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
-                        : so.status === 'accepted'
-                        ? 'bg-purple-600 text-white shadow-md cursor-default'
-                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={processingOrder === so._id || so.status !== 'pending'}
-                  >
-                    {processingOrder === so._id ? 'Accepting...' : so.status === 'accepted' ? 'Accepted' : 'Accept Order'}
-                  </button>
                   
+                  {/* Preparing Button - Available if PENDING, ACCEPTED, or PREPARING */}
                   <button 
                     onClick={() => handleStatusChange(so._id, 'preparing')}
                     className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -287,11 +325,13 @@ export default function ShopOrders() {
                         ? 'bg-yellow-500 text-white shadow-md' 
                         : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
                     }`}
-                    disabled={processingOrder === so._id || so.status === 'pending'} // Disable if pending
+                    // Owner can only move past 'pending' to 'preparing' or stay there.
+                    disabled={processingOrder === so._id || ['out_for_delivery', 'delivered', 'cancelled'].includes(so.status)} 
                   >
-                    {processingOrder === so._id ? 'Updating...' : 'Preparing'}
+                    {processingOrder === so._id && so.status !== 'preparing' ? 'Updating...' : so.status === 'preparing' ? 'Preparing' : 'Start Preparing'}
                   </button>
                   
+                  {/* Ready for Pickup Button - Available after accepted/preparing AND only if DB is assigned */}
                   <button 
                     onClick={() => handleStatusChange(so._id, 'ready_for_pickup')}
                     className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -299,26 +339,15 @@ export default function ShopOrders() {
                         ? 'bg-orange-500 text-white shadow-md' 
                         : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200'
                     }`}
-                    disabled={processingOrder === so._id || so.status === 'pending' || so.status === 'out_for_delivery' || so.status === 'delivered'}
+                    // Disabled if: processing, or has already passed this stage, or DB not assigned.
+                    disabled={processingOrder === so._id || ['pending', 'out_for_delivery', 'delivered', 'cancelled'].includes(so.status) || !so.deliveryBoy}
                   > 
-                    {processingOrder === so._id ? 'Updating...' : 'Ready for Pickup'}
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleStatusChange(so._id, 'delivered')}
-                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center justify-center ${
-                      so.status === 'delivered' 
-                        ? 'bg-green-600 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
-                    }`}
-                    disabled={processingOrder === so._id || so.status === 'ready_for_pickup'} // Owner can mark delivered only if Ready for Pickup (if DB fails to update)
-                  >
-                    {processingOrder === so._id ? 'Updating...' : 'Delivered'}
+                    {processingOrder === so._id && so.status !== 'ready_for_pickup' ? 'Updating...' : so.status === 'ready_for_pickup' ? 'Ready for Pickup' : 'Ready for Pickup'}
                   </button>
                   
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                    Note: Accepting the order will notify the delivery boy.
+                    Note: A Delivery Boy must accept the order (status becomes 'accepted') and be assigned before it can be marked 'Ready for Pickup'. The Delivery Boy handles 'Out for Delivery' and 'Delivered'.
                 </p>
               </div>
             </div>

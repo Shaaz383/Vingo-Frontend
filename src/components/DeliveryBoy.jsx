@@ -15,7 +15,7 @@ const getStatusColor = (status) => {
     case 'ready_for_pickup':
       return { bg: 'bg-orange-500', text: 'text-black', label: 'Ready for Pickup' };
     case 'accepted':
-      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Accepted by Shop' };
+      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Accepted by You' };
     case 'preparing':
       return { bg: 'bg-yellow-500', text: 'text-black', label: 'Preparing' };
     case 'cancelled':
@@ -41,20 +41,31 @@ const DeliveryBoy = () => {
 
   // Fetch orders assigned to the current delivery boy AND new requests
   const fetchOrders = async () => {
+    if (!userData?._id) return;
+    
     try {
       setLoading(true);
       const response = await axios.get(`${apiBase}/my-orders`, { withCredentials: true });
       const fetchedOrders = response.data.orders || [];
 
-      const assigned = fetchedOrders.filter(order => order.deliveryBoy?._id === userData._id);
-      const newRequests = fetchedOrders.filter(order => !order.deliveryBoy && order.status === 'pending');
+      const assigned = fetchedOrders.filter(order => 
+        order.deliveryBoy?._id === userData._id && 
+        ['accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery'].includes(order.status)
+      );
+      // Filter new requests correctly: deliveryBoy is null AND status is 'pending'
+      const newRequests = fetchedOrders.filter(order => 
+        !order.deliveryBoy && order.status === 'pending'
+      );
 
       setAssignedOrders(assigned);
       setNewOrderRequests(newRequests);
       setError(null);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to fetch orders. Please try again later.');
-      toast.error('Failed to fetch orders.');
+      // Only show error toast if not just a "no shop found" type of expected error
+      if (!/not found/i.test(err?.response?.data?.message || '')) {
+         toast.error('Failed to fetch orders.');
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -73,16 +84,17 @@ const DeliveryBoy = () => {
 
     // Listen for new order request from the backend (sent to all DBs)
     const handleNewOrderRequest = (data) => {
+      // data contains { shopOrderId, orderId, shopName, total, customerAddress }
       toast('New delivery request available!', { icon: '🚨' });
-      // Add to newOrderRequests if not already present
+      
+      // OPTIMIZATION: Instead of refetching everything (which can be slow),
+      // we check if the request is already in the list, if not, we simply refetch.
       setNewOrderRequests(prev => {
         if (!prev.some(req => req._id === data.shopOrderId)) {
-          // The backend now sends more complete data for newOrderRequest
-          // However, the current `placeOrder` only sends shopOrderId, orderId, shopName, total, customerAddress
-          // To display fully, we need to fetch the full order details.
-          // For now, we'll just trigger a refetch.
+          // Trigger a full fetch to get the complete populated order structure
+          // This is simpler than trying to construct the complex object from partial data
+          // sent over the socket.
           fetchOrders(); 
-          return prev;
         }
         return prev;
       });
@@ -95,26 +107,39 @@ const DeliveryBoy = () => {
       }
       // Remove from new requests regardless of who accepted it
       setNewOrderRequests(prev => prev.filter(req => req._id !== data.shopOrderId));
-      // If it was accepted by current user, it will be moved to assignedOrders by handleAcceptOrder
     };
 
-    // Listen for status updates (e.g., from Shop changing status or DB changing status)
+    // Listen for status updates (e.g., from Shop changing status)
     const handleStatusUpdate = (data) => {
+        // Only update assigned orders list. New requests will be implicitly updated by `handleOrderRequestAccepted`
         setAssignedOrders(prevOrders => prevOrders.map(order => 
             order._id === data.shopOrderId ? { ...order, status: data.status } : order
         ));
-    };
+        
+        // Also check if the updated order is a *new request* and remove it if its status changes away from pending
+        setNewOrderRequests(prev => prev.filter(req => req._id !== data.shopOrderId || data.status === 'pending'));
 
-    socket.on('newOrderRequest', handleNewOrderRequest);
-    socket.on('orderRequestAccepted', handleOrderRequestAccepted);
+        // Show a toast for important updates related to assigned orders
+        if (assignedOrders.some(order => order._id === data.shopOrderId)) {
+             toast(`Order status updated to: ${data.status.replace(/_/g, ' ').toUpperCase()}`, { icon: '🔄' });
+        }
+    };
+    
+    // Listen for general status updates (covers Shop actions like 'preparing', 'ready_for_pickup')
     socket.on('orderStatusUpdated', handleStatusUpdate);
+    
+    // Listen for the specific new request event triggered by order placement
+    socket.on('newOrderRequest', handleNewOrderRequest);
+    
+    // Listen for acceptance event triggered by another DB
+    socket.on('orderRequestAccepted', handleOrderRequestAccepted);
 
     return () => {
+      socket.off('orderStatusUpdated', handleStatusUpdate);
       socket.off('newOrderRequest', handleNewOrderRequest);
       socket.off('orderRequestAccepted', handleOrderRequestAccepted);
-      socket.off('orderStatusUpdated', handleStatusUpdate);
     };
-  }, [socket, userData?._id]); // Dependency on socket and userData._id
+  }, [socket, userData?._id, fetchOrders, assignedOrders]); // Added fetchOrders and assignedOrders as dependencies
 
   // Handle status update for an assigned shop order
   const handleStatusUpdate = async (orderId, newStatus) => {
@@ -152,18 +177,32 @@ const DeliveryBoy = () => {
       );
       
       toast.success(`Order #${shopOrderId.slice(-6)} accepted!`);
-      // Remove from new requests
-      setNewOrderRequests(prev => prev.filter(req => req._id !== shopOrderId));
-      // Add to assigned orders
+      
+      // The socket event 'orderRequestAccepted' will automatically remove the item 
+      // from `newOrderRequests` for ALL DBs.
+      
+      // Manually add to assigned orders (full object comes from response)
       setAssignedOrders(prev => [...prev, response.data.shopOrder]);
+      
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to accept order.');
+      // Check for conflict (409 status code)
+      const message = err?.response?.data?.message || 'Failed to accept order.';
+      if (/accepted by another/i.test(message)) {
+          // If another DB took it first, just fetch to update UI state
+          fetchOrders(); 
+      }
+      toast.error(message);
       console.error(err);
     } finally {
       setProcessingOrder(null);
     }
   };
 
+
+  // ... (rest of the component remains the same, with the new button logic)
+  
+  // Note: The UI logic in DeliveryBoy.jsx already seems correct for rendering,
+  // focusing on the socket communication and state updates here.
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -191,7 +230,8 @@ const DeliveryBoy = () => {
           <div className="space-y-6 mb-8">
             {newOrderRequests.map(order => {
               const { bg, text, label } = getStatusColor(order.status);
-              const { deliveryAddress } = order.order;
+              // Ensure order.order and deliveryAddress exist before accessing properties
+              const deliveryAddress = order.order?.deliveryAddress || {};
               
               return (
                 <div key={order._id} className="bg-white rounded-xl shadow-lg border border-purple-200 overflow-hidden">
@@ -199,7 +239,7 @@ const DeliveryBoy = () => {
                   {/* Order Header */}
                   <div className={`p-4 ${bg} ${text} flex justify-between items-center`}>
                     <div className="font-bold text-lg">
-                      New Request #{order.order._id.slice(-6)}
+                      New Request #{order.order?._id?.slice(-6) || 'N/A'}
                     </div>
                     <div className="font-medium flex items-center space-x-2">
                       <FaClock />
@@ -227,9 +267,9 @@ const DeliveryBoy = () => {
                         <FaUser className="mr-2 text-red-500" /> Drop-off Details
                       </h3>
                       <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                        <p className="font-medium">{deliveryAddress.name}</p>
-                        <p className="text-gray-600">{deliveryAddress.mobileNumber}</p>
-                        <p className="text-gray-600">{deliveryAddress.addressLine}, {deliveryAddress.city}</p>
+                        <p className="font-medium">{deliveryAddress.name || 'N/A'}</p>
+                        <p className="text-gray-600">{deliveryAddress.mobileNumber || 'N/A'}</p>
+                        <p className="text-gray-600">{deliveryAddress.addressLine || 'N/A'}, {deliveryAddress.city || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -328,7 +368,7 @@ const DeliveryBoy = () => {
                             icon={<FaClock />}
                             label="Ready for Pickup"
                             handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered || order.status.toLowerCase() === 'out_for_delivery'}
+                            isDisabled={isDelivered || ['out_for_delivery', 'delivered'].includes(order.status.toLowerCase()) || order.status.toLowerCase() !== 'accepted' && order.status.toLowerCase() !== 'preparing'}
                             isLoading={processingOrder === order._id}
                         />
 
@@ -339,7 +379,7 @@ const DeliveryBoy = () => {
                             icon={<FaMotorcycle />}
                             label="Out for Delivery"
                             handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered || order.status.toLowerCase() === 'delivered' || order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() !== 'ready_for_pickup'}
+                            isDisabled={isDelivered || order.status.toLowerCase() !== 'ready_for_pickup'}
                             isLoading={processingOrder === order._id}
                         />
 
