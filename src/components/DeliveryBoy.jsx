@@ -2,30 +2,58 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { FaBox, FaMapMarkerAlt, FaUser, FaSync, FaTruck, FaClock, FaCheckCircle, FaBan, FaMotorcycle, FaBell } from 'react-icons/fa';
-import { useSocket } from '../context/SocketContext'; // Import useSocket
-import { useSelector } from 'react-redux'; // To get current user ID
+import { useSocket } from '../context/SocketContext'; 
+import { useSelector } from 'react-redux'; 
 
-// Helper function to determine button and status bar styling
-const getStatusColor = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'delivered':
-      return { bg: 'bg-green-600', text: 'text-white', label: 'Delivered' };
-    case 'out_for_delivery':
-      return { bg: 'bg-blue-600', text: 'text-white', label: 'Out for Delivery' };
-    case 'ready_for_pickup':
-      return { bg: 'bg-orange-500', text: 'text-black', label: 'Ready for Pickup' };
-    case 'accepted':
-      return { bg: 'bg-yellow-500', text: 'text-black', label: 'Accepted by You' };
-    case 'preparing': // New requests are now in 'preparing' state
-      return { bg: 'bg-purple-600', text: 'text-white', label: 'New Request' };
-    case 'cancelled':
-    case 'rejected':
-      return { bg: 'bg-red-600', text: 'text-white', label: 'Cancelled/Rejected' };
-    case 'pending':
-    default:
-      return { bg: 'bg-gray-500', text: 'text-white', label: 'Unknown Status' };
-  }
+// Unified function to get professional status display properties
+const getStatusProps = (status) => {
+    const lowerStatus = status?.toLowerCase();
+    let label = status?.replace(/_/g, ' ') || 'Unknown';
+    let colorClass = 'bg-gray-500';
+    let customMessage = '';
+
+    switch (lowerStatus) {
+        case 'created':
+        case 'pending':
+            label = 'Awaiting Shop Confirmation';
+            colorClass = 'bg-yellow-500';
+            break;
+        case 'preparing':
+            label = 'New Request';
+            colorClass = 'bg-purple-600';
+            customMessage = 'This order has been accepted by the shop and is ready for delivery assignment.';
+            break;
+        case 'accepted':
+            label = 'Accepted by You';
+            colorClass = 'bg-indigo-600';
+            break;
+        case 'ready_for_pickup':
+            label = 'Ready for Pickup';
+            colorClass = 'bg-orange-500';
+            break;
+        case 'out_for_delivery':
+            label = 'Out for Delivery';
+            colorClass = 'bg-green-600';
+            break;
+        case 'delivered':
+            label = 'Delivered';
+            colorClass = 'bg-red-600'; 
+            break;
+        case 'cancelled':
+            label = 'Cancelled';
+            colorClass = 'bg-gray-400';
+            break;
+        default:
+            label = status;
+            colorClass = 'bg-gray-500';
+    }
+    
+    // Auto capitalize each word
+    label = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+    return { label, colorClass, customMessage };
 };
+
 
 const DeliveryBoy = () => {
   const [assignedOrders, setAssignedOrders] = useState([]);
@@ -33,8 +61,8 @@ const DeliveryBoy = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(null);
-  const { socket } = useSocket(); // Get socket instance
-  const { userData } = useSelector((state) => state.user); // Get current delivery boy's ID
+  const { socket } = useSocket(); 
+  const { userData } = useSelector((state) => state.user); 
 
   const apiBase = 'http://localhost:3000/api/delivery';
 
@@ -44,7 +72,6 @@ const DeliveryBoy = () => {
     
     try {
       setLoading(true);
-      // The backend API handles the complex logic of fetching assigned + unassigned/'preparing' orders
       const response = await axios.get(`${apiBase}/my-orders`, { withCredentials: true });
       const fetchedOrders = response.data.orders || [];
 
@@ -74,57 +101,43 @@ const DeliveryBoy = () => {
 
 
   useEffect(() => {
-    if (userData?._id) { // Fetch orders only when user data is available
+    if (userData?._id) { 
       fetchOrders();
     }
-  }, [userData?._id, fetchOrders]); // Dependency on userData._id and fetchOrders
+  }, [userData?._id, fetchOrders]); 
 
   // Socket.io Listener for new orders and updates
   useEffect(() => {
     if (!socket || !userData?._id) return;
 
-    // Listen for new order request from the backend (sent to all DBs by Owner's acceptance)
     const handleNewOrderRequest = (data) => {
-      // data contains { shopOrderId, orderId, shopName, total, customerAddress }
       toast('New delivery request available!', { icon: '🚨' });
-      
-      // Trigger a full fetch to get the complete populated order structure
       fetchOrders(); 
     };
 
-    // Listen for when an order request has been accepted by ANY delivery boy
     const handleOrderRequestAccepted = (data) => {
-      if (data.acceptedBy !== userData._id) { // If accepted by someone else
+      if (data.acceptedBy !== userData._id) { 
         toast(`Order #${data.shopOrderId.slice(-6)} accepted by another delivery boy.`, { icon: 'ℹ️' });
       }
-      // Remove from new requests regardless of who accepted it
       setNewOrderRequests(prev => prev.filter(req => req._id !== data.shopOrderId));
     };
 
-    // Listen for status updates (e.g., from Shop changing status)
     const handleStatusUpdate = (data) => {
         setAssignedOrders(prevOrders => prevOrders.map(order => 
-            order._id === data.shopOrderId ? { ...order, status: data.status } : order
+            order._id === data.shopOrderId ? { ...order, status: data.status, deliveryBoy: data.deliveryBoy || order.deliveryBoy } : order
         ));
         
-        // Remove from new requests if status changes away from 'preparing'
         setNewOrderRequests(prev => prev.filter(req => 
           req._id !== data.shopOrderId || data.status === 'preparing')
         );
 
-        // Show a toast for important updates related to assigned orders
         if (assignedOrders.some(order => order._id === data.shopOrderId)) {
-             toast(`Order status updated to: ${data.status.replace(/_/g, ' ').toUpperCase()}`, { icon: '🔄' });
+             toast(`Order status updated to: ${getStatusProps(data.status).label}`, { icon: '🔄' });
         }
     };
     
-    // Listen for general status updates (covers Shop actions like 'ready_for_pickup')
     socket.on('orderStatusUpdated', handleStatusUpdate);
-    
-    // Listen for the specific new request event triggered by owner acceptance
     socket.on('newOrderRequest', handleNewOrderRequest);
-    
-    // Listen for acceptance event triggered by another DB
     socket.on('orderRequestAccepted', handleOrderRequestAccepted);
 
     return () => {
@@ -146,9 +159,8 @@ const DeliveryBoy = () => {
         { withCredentials: true }
       );
       
-      // Update local state with the returned order
       setAssignedOrders(prev => prev.map(order => (order._id === orderId ? response.data.order : order)));
-      toast.success(`Delivery status updated to: ${newStatus.replace(/_/g, ' ').toUpperCase()}`);
+      toast.success(`Delivery status updated to: ${getStatusProps(newStatus).label}`);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to update delivery status.');
       console.error(err);
@@ -165,21 +177,17 @@ const DeliveryBoy = () => {
       setProcessingOrder(shopOrderId);
       const response = await axios.patch(
         `${apiBase}/accept-order/${shopOrderId}`, 
-        {}, // No body needed for acceptance
+        {}, 
         { withCredentials: true }
       );
       
       toast.success(`Order #${shopOrderId.slice(-6)} accepted!`);
       
-      // Manually add to assigned orders (full object comes from response)
       setAssignedOrders(prev => [...prev, response.data.shopOrder]);
-      // Note: The socket event 'orderRequestAccepted' will automatically remove the item 
-      // from `newOrderRequests` for ALL DBs, including this one.
       
     } catch (err) {
       const message = err?.response?.data?.message || 'Failed to accept order.';
       if (/accepted by another/i.test(message)) {
-          // If another DB took it first, just fetch to update UI state
           fetchOrders(); 
       }
       toast.error(message);
@@ -215,15 +223,14 @@ const DeliveryBoy = () => {
         {newOrderRequests.length > 0 ? (
           <div className="space-y-6 mb-8">
             {newOrderRequests.map(order => {
-              const { bg, text, label } = getStatusColor(order.status);
-              // Ensure order.order and deliveryAddress exist before accessing properties
+              const { colorClass, label } = getStatusProps(order.status);
               const deliveryAddress = order.order?.deliveryAddress || {};
               
               return (
                 <div key={order._id} className="bg-white rounded-xl shadow-lg border border-purple-200 overflow-hidden">
                   
                   {/* Order Header */}
-                  <div className={`p-4 ${bg} ${text} flex justify-between items-center`}>
+                  <div className={`p-4 ${colorClass} text-white flex justify-between items-center`}>
                     <div className="font-bold text-lg">
                       New Request #{order.order?._id?.slice(-6) || 'N/A'}
                     </div>
@@ -295,7 +302,7 @@ const DeliveryBoy = () => {
         {assignedOrders.length > 0 ? (
           <div className="space-y-6">
             {assignedOrders.map(order => {
-              const { bg, text, label } = getStatusColor(order.status);
+              const { colorClass, label } = getStatusProps(order.status);
               const { deliveryAddress } = order.order;
               const isDelivered = order.status.toLowerCase() === 'delivered' || order.status.toLowerCase() === 'cancelled';
               
@@ -303,7 +310,7 @@ const DeliveryBoy = () => {
                 <div key={order._id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                   
                   {/* Order Header */}
-                  <div className={`p-4 ${bg} ${text} flex justify-between items-center`}>
+                  <div className={`p-4 ${colorClass} text-white flex justify-between items-center`}>
                     <div className="font-bold text-lg">
                       Delivery for #{order.order._id.slice(-6)}
                     </div>
@@ -367,7 +374,7 @@ const DeliveryBoy = () => {
                             icon={<FaMotorcycle />}
                             label="Out for Delivery"
                             handleUpdate={handleStatusUpdate}
-                            isDisabled={isDelivered || order.status.toLowerCase() !== 'ready_for_pickup'} // DB can only set this AFTER owner sets it to 'ready_for_pickup'
+                            isDisabled={isDelivered || order.status.toLowerCase() !== 'ready_for_pickup'} 
                             isLoading={processingOrder === order._id}
                         />
 
@@ -410,26 +417,23 @@ const DeliveryBoy = () => {
 
 // Helper component for the status buttons
 const DeliveryButton = ({ orderId, currentStatus, targetStatus, icon, label, handleUpdate, isDisabled, isLoading, isDanger = false }) => {
-    const { bg, text } = getStatusColor(targetStatus);
+    const { colorClass } = getStatusProps(targetStatus);
     const isCurrentStatus = currentStatus?.toLowerCase() === targetStatus.toLowerCase();
     
     let buttonClass = 'transition-all duration-200 flex items-center justify-center h-full rounded-md px-3 py-2 text-xs font-medium';
     
     if (isDisabled) {
         buttonClass += isCurrentStatus ? 
-            ` ${bg} ${text} shadow-md opacity-100 cursor-default` : 
+            ` ${colorClass} text-white shadow-md opacity-100 cursor-default` : 
             ' bg-gray-200 text-gray-500 cursor-not-allowed';
     } else {
-        if (isDanger) {
-            buttonClass += ' bg-red-600 text-white hover:bg-red-700 shadow-md';
-        } else if (targetStatus === 'accept') { // Special styling for accept button
+        if (targetStatus === 'accept') { 
             buttonClass += ' bg-purple-600 text-white hover:bg-purple-700 shadow-md';
         }
         else {
-            // Use specific colors for active statuses
-            let activeBg = isCurrentStatus ? bg : 'bg-white border border-gray-200';
-            let activeText = isCurrentStatus ? text : 'text-gray-700 hover:text-red-600';
-            let hoverBg = isCurrentStatus ? `hover:${bg.replace('600', '700')}` : 'hover:bg-red-50';
+            let activeBg = isCurrentStatus ? colorClass : 'bg-white border border-gray-200';
+            let activeText = isCurrentStatus ? 'text-white' : 'text-gray-700 hover:text-red-600';
+            let hoverBg = isCurrentStatus ? `hover:${colorClass}` : 'hover:bg-red-50';
             buttonClass += ` ${activeBg} ${activeText} ${hoverBg}`;
         }
     }

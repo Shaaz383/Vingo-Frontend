@@ -68,6 +68,7 @@ export default function MyOrders() {
           
           return {
             ...order,
+            status: data.status, // <-- Update top-level status
             shopOrders: updatedShopOrders
           };
         })
@@ -79,6 +80,7 @@ export default function MyOrders() {
           ...prev,
           [data.orderId]: {
             ...prev[data.orderId],
+            status: data.status, // <-- Update top-level status
             shopOrders: prev[data.orderId].shopOrders.map(shopOrder => {
               if (shopOrder._id === data.shopOrderId) {
                 return { ...shopOrder, status: data.status, deliveryBoy: data.deliveryBoy || shopOrder.deliveryBoy };
@@ -188,6 +190,29 @@ export default function MyOrders() {
     }
   };
 
+  // Compute aggregate totals for a given order's shopOrders
+  const computeTotals = (shopOrders = []) => {
+    const itemsSubtotal = shopOrders.reduce((sum, so) => sum + (so.subtotal || 0), 0);
+    const deliveryFee = shopOrders.reduce((sum, so) => sum + (so.deliveryFee || 0), 0);
+    const taxes = shopOrders.reduce((sum, so) => sum + (so.tax || 0), 0);
+    const grandTotal = shopOrders.reduce((sum, so) => sum + (so.total || 0), 0);
+    return { itemsSubtotal, deliveryFee, taxes, grandTotal };
+  };
+
+  // Compute overall status from shopOrders (handles cases where main order status is not updated)
+  const computeOverallStatus = (orderObj) => {
+    const baseStatus = orderObj?.status || 'created';
+    const ranks = ['created', 'pending', 'preparing', 'accepted', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled'];
+    let overall = baseStatus;
+    (orderObj?.shopOrders || []).forEach(so => {
+      const soStatus = (so.status || '').toLowerCase();
+      if (ranks.indexOf(soStatus) > ranks.indexOf(overall?.toLowerCase())) {
+        overall = so.status;
+      }
+    });
+    return overall;
+  };
+
   const calculateSubtotal = (items) => {
     if (!items || !Array.isArray(items)) return 0;
     
@@ -254,8 +279,8 @@ export default function MyOrders() {
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="font-bold text-lg">₹{Math.round(order.totalAmount)}</div>
-                    <div className={`text-xs px-2 py-1 rounded-full text-white ${getStatusColor(order.status)}`}>
-                      {order.status}
+                    <div className={`text-xs px-2 py-1 rounded-full text-white capitalize ${getStatusColor(computeOverallStatus(order))}`}>
+                      {computeOverallStatus(order)?.replace(/_/g, ' ')}
                     </div>
                   </div>
                 </div>
@@ -378,22 +403,30 @@ export default function MyOrders() {
                           Order Summary
                         </h3>
                         <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Items Total</span>
-                            <span>₹{Math.round(orderDetails[order._id]?.itemsTotal || order.totalAmount || 0)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Delivery Fee</span>
-                            <span>₹{Math.round(orderDetails[order._id]?.deliveryFee || 0)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Taxes</span>
-                            <span>₹{Math.round(orderDetails[order._id]?.taxes || 0)}</span>
-                          </div>
-                          <div className="flex justify-between font-bold pt-2 border-t border-gray-200 mt-2">
-                            <span>Total</span>
-                            <span>₹{Math.round(orderDetails[order._id]?.totalAmount || order.totalAmount || 0)}</span>
-                          </div>
+                          {(() => {
+                            const shopOrders = orderDetails[order._id]?.shopOrders || [];
+                            const totals = computeTotals(shopOrders);
+                            return (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Items Total</span>
+                                  <span>₹{Math.round(totals.itemsSubtotal)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Delivery Fee</span>
+                                  <span>₹{Math.round(totals.deliveryFee)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Taxes</span>
+                                  <span>₹{Math.round(totals.taxes)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold pt-2 border-t border-gray-200 mt-2">
+                                  <span>Total</span>
+                                  <span>₹{Math.round(totals.grandTotal || order.totalAmount || 0)}</span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -421,9 +454,22 @@ export default function MyOrders() {
                           <FaShippingFast className="mr-2 text-red-500" />
                           Delivery Status
                         </h3>
-                        <div className={`inline-block px-3 py-1 rounded-full text-white ${getStatusColor(order.status)}`}>
-                          {order.status}
+                        <div className={`inline-block px-3 py-1 rounded-full text-white capitalize ${getStatusColor(computeOverallStatus(orderDetails[order._id] || order))}`}>
+                          {(computeOverallStatus(orderDetails[order._id] || order) || 'created').replace(/_/g, ' ')}
                         </div>
+                        {(() => {
+                          const shopOrders = orderDetails[order._id]?.shopOrders || [];
+                          const assigned = shopOrders.map(so => so.deliveryBoy).filter(Boolean);
+                          if (assigned.length === 0) return null;
+                          const db = assigned[0];
+                          return (
+                            <div className="mt-3 p-3 rounded-md bg-white border border-gray-200">
+                              <h4 className="font-medium text-gray-700 mb-1">Assigned Delivery</h4>
+                              <p className="text-sm text-gray-800">{db.fullName}</p>
+                              <p className="text-sm text-gray-600">Mobile: {db.mobile || 'N/A'}</p>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   ) : (

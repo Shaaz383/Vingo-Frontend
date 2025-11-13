@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getShopOrders, updateShopOrderStatus } from '../services/orderApi';
 import { toast } from 'react-hot-toast';
 import { FaBox, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaSync, FaTruck } from 'react-icons/fa';
@@ -11,6 +11,54 @@ export default function ShopOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [processingOrder, setProcessingOrder] = useState(null);
   const { socket } = useSocket(); 
+
+  // Unified function to get professional status display properties
+  const getStatusProps = useCallback((status) => {
+    const lowerStatus = status?.toLowerCase();
+    let label = status?.replace(/_/g, ' ') || 'Unknown';
+    let colorClass = 'bg-gray-500';
+    
+    switch (lowerStatus) {
+        case 'created':
+        case 'pending':
+            label = 'Awaiting Confirmation';
+            colorClass = 'bg-yellow-500';
+            break;
+        case 'preparing':
+            label = 'Preparing Food';
+            colorClass = 'bg-blue-500';
+            break;
+        case 'accepted':
+            label = 'Delivery Assigned';
+            colorClass = 'bg-indigo-600';
+            break;
+        case 'ready_for_pickup':
+            label = 'Ready for Pickup';
+            colorClass = 'bg-orange-500';
+            break;
+        case 'out_for_delivery':
+            label = 'Out for Delivery';
+            colorClass = 'bg-green-600';
+            break;
+        case 'delivered':
+            label = 'Delivered';
+            colorClass = 'bg-red-600'; 
+            break;
+        case 'cancelled':
+            label = 'Cancelled';
+            colorClass = 'bg-gray-400';
+            break;
+        default:
+            label = status;
+            colorClass = 'bg-gray-500';
+    }
+    
+    // Auto capitalize each word
+    label = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+    return { label, colorClass };
+  }, []); 
+
 
   const fetchShopOrders = async () => {
     try {
@@ -51,7 +99,6 @@ export default function ShopOrders() {
     // Updates when a new order is placed (sent only to owner in placeOrder now)
     const handleNewShopOrder = (data) => {
         toast('New order received!', { icon: '🔔' });
-        // Trigger a fetch to get the fully populated order details
         fetchShopOrders(); 
     };
 
@@ -73,20 +120,8 @@ export default function ShopOrders() {
       socket.off('newShopOrder', handleNewShopOrder);
       socket.off('orderAcceptedByDeliveryBoy', handleOrderAcceptedByDB);
     };
-  }, [socket, fetchShopOrders]); // Included fetchShopOrders in dependency array
+  }, [socket, fetchShopOrders]); 
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'delivered': return 'bg-green-500';
-      case 'accepted': return 'bg-blue-500';
-      case 'preparing': return 'bg-yellow-500';
-      case 'out_for_delivery': return 'bg-indigo-500';
-      case 'rejected':
-      case 'cancelled': return 'bg-red-500'; 
-      case 'ready_for_pickup': return 'bg-orange-500';
-      default: return 'bg-gray-500';
-    }
-  };
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -98,7 +133,7 @@ export default function ShopOrders() {
           order._id === orderId ? res.shopOrder : order
         )
       );
-      toast.success(`Order status updated to ${newStatus.replace(/_/g, ' ')}`, {
+      toast.success(`Order status updated to ${getStatusProps(newStatus).label}`, {
         icon: '✅',
         style: {
           borderRadius: '10px',
@@ -145,7 +180,7 @@ export default function ShopOrders() {
           <div className="flex items-center justify-between md:justify-end">
             <div className="flex overflow-x-auto pb-2 w-full">
               <div className="flex w-full min-w-max">
-                {/* Status filters (keep simplified for space) */}
+                {/* Status filters */}
                 <button 
                   onClick={() => setStatusFilter('all')} 
                   className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'all' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 rounded-l-md flex-1`}
@@ -154,27 +189,27 @@ export default function ShopOrders() {
                 </button>
                 <button 
                   onClick={() => setStatusFilter('pending')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'pending' ? getStatusProps('pending').colorClass + ' text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
                 >
-                  Pending
+                  {getStatusProps('pending').label}
                 </button>
                 <button 
                   onClick={() => setStatusFilter('accepted')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'accepted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'accepted' ? getStatusProps('accepted').colorClass + ' text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
                 >
-                  Accepted
+                  {getStatusProps('accepted').label}
                 </button>
                 <button 
                   onClick={() => setStatusFilter('preparing')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'preparing' ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'preparing' ? getStatusProps('preparing').colorClass + ' text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-gray-300 flex-1`}
                 >
-                  Preparing
+                  {getStatusProps('preparing').label}
                 </button>
                 <button 
                   onClick={() => setStatusFilter('delivered')} 
-                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'delivered' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-r border-gray-300 rounded-r-md flex-1`}
+                  className={`px-3 py-2 text-xs sm:text-sm font-medium ${statusFilter === 'delivered' ? getStatusProps('delivered').colorClass + ' text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border-t border-b border-r border-gray-300 rounded-r-md flex-1`}
                 >
-                  Delivered
+                  {getStatusProps('delivered').label}
                 </button>
               </div>
             </div>
@@ -184,7 +219,7 @@ export default function ShopOrders() {
           </div>
         </div>
       </div>
-      
+
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
@@ -232,8 +267,8 @@ export default function ShopOrders() {
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="font-bold text-lg">₹{Math.round(so.total || 0)}</div>
-                    <div className={`text-xs px-2 py-1 rounded-full text-white ${getStatusColor(so.status)}`}>
-                      {so.status?.replace(/_/g, ' ') || 'Processing'}
+                    <div className={`px-2 py-1 rounded-full text-white text-xs font-medium ${getStatusProps(so.status).colorClass}`}>
+                      {getStatusProps(so.status).label}
                     </div>
                   </div>
                 </div>
@@ -304,8 +339,20 @@ export default function ShopOrders() {
                   </ul>
                   
                   <div className="mt-4 border-t pt-3 space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span>₹{Math.round(so.subtotal || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Delivery Fee</span>
+                      <span>₹{Math.round(so.deliveryFee || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Taxes</span>
+                      <span>₹{Math.round(so.tax || 0)}</span>
+                    </div>
                     <div className="flex justify-between font-bold pt-2 border-t">
-                      <span>Total:</span>
+                      <span>Grand Total</span>
                       <span>₹{Math.round(so.total) || 0}</span>
                     </div>
                   </div>
