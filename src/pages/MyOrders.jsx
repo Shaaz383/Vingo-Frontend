@@ -18,9 +18,20 @@ export default function MyOrders() {
     try {
       setLoading(true);
       const data = await getMyOrders();
-      setOrders(data.orders || []);
-      if (data.orders && data.orders.length > 0) {
-        toast.success('Orders loaded successfully');
+      
+      // CRITICAL FIX: Filter out null, undefined, or incomplete order objects
+      const validOrders = (data.orders || []).filter(order => 
+        order && 
+        order.shopOrders && 
+        order.shopOrders.length > 0 &&
+        order.totalAmount !== undefined &&
+        order.totalAmount !== null &&
+        order.totalAmount > 0 // Ensure order has a valid amount
+      );
+      
+      setOrders(validOrders);
+      if (validOrders.length > 0) {
+        // toast.success('Orders loaded successfully'); // Keeping toast minimal
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -46,11 +57,11 @@ export default function MyOrders() {
       setOrders(prevOrders => 
         prevOrders.map(order => {
           // Find the shop order that matches the updated one
-          const updatedShopOrders = order.shopOrders.map(shopOrder => {
+          const updatedShopOrders = (order.shopOrders || []).map(shopOrder => {
             if (shopOrder._id === data.shopOrderId) {
               // Show toast notification for status update
               toast.success(`Order status updated to: ${data.status}`);
-              return { ...shopOrder, status: data.status };
+              return { ...shopOrder, status: data.status, deliveryBoy: data.deliveryBoy || shopOrder.deliveryBoy };
             }
             return shopOrder;
           });
@@ -70,7 +81,7 @@ export default function MyOrders() {
             ...prev[data.orderId],
             shopOrders: prev[data.orderId].shopOrders.map(shopOrder => {
               if (shopOrder._id === data.shopOrderId) {
-                return { ...shopOrder, status: data.status };
+                return { ...shopOrder, status: data.status, deliveryBoy: data.deliveryBoy || shopOrder.deliveryBoy };
               }
               return shopOrder;
             })
@@ -100,15 +111,13 @@ export default function MyOrders() {
       }));
     } catch (err) {
       console.error("Error fetching order details:", err);
-      // Don't show error toast to avoid confusing the user
-      // Instead, use the basic order info we already have
+      // Fallback to basic order info if fetch fails
       const currentOrder = orders.find(o => o._id === orderId);
       if (currentOrder) {
         setOrderDetails(prev => ({
           ...prev,
           [orderId]: {
             ...currentOrder,
-            // Add missing fields that might be needed in the UI
             user: currentOrder.user || { name: 'User', email: 'Not available' },
             deliveryAddress: currentOrder.deliveryAddress || { 
               addressLine: 'Address not available',
@@ -183,14 +192,10 @@ export default function MyOrders() {
     if (!items || !Array.isArray(items)) return 0;
     
     return items.reduce((total, item) => {
-      // If item.total exists, use it directly (most accurate)
-      if (item.total) {
-        return total + item.total;
-      }
-      
+      // Use pre-calculated total if available, otherwise calculate from price/quantity
       const quantity = item.quantity || 0;
       const price = item.priceAtPurchase || (item.item?.price) || 0;
-      return total + (quantity * price);
+      return total + (item.total || (quantity * price));
     }, 0);
   };
 
@@ -243,7 +248,7 @@ export default function MyOrders() {
                         })}
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
-                        {order.shopOrders?.reduce((total, shop) => total + (shop.items?.length || 0), 0) || 0} items
+                        {(order.shopOrders || []).reduce((total, shop) => total + (shop.items?.length || 0), 0) || 0} items
                       </div>
                     </div>
                   </div>
@@ -326,7 +331,7 @@ export default function MyOrders() {
                                     const itemName = itemDetails.name || item.itemName || 'Food item';
                                     const itemImage = itemDetails.image || '';
                                     const quantity = item.quantity || 0;
-                                    const price = item.priceAtPurchase || itemDetails.price || 0;
+                                    const price = item.priceAtPurchase || (item.item?.price) || 0;
                                     const total = item.total || (quantity * price);
                                     
                                     return (
@@ -469,7 +474,7 @@ export default function MyOrders() {
 
                   <div className="mt-4 pt-3 border-t flex items-center justify-between">
                     <div className="text-sm text-gray-600">
-                      {order.shopOrders?.length || 0} {order.shopOrders?.length === 1 ? 'restaurant' : 'restaurants'}
+                      {(order.shopOrders || []).length || 0} {order.shopOrders?.length === 1 ? 'restaurant' : 'restaurants'}
                     </div>
                     <button 
                       onClick={(e) => {
