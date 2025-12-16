@@ -45,7 +45,7 @@ function ForgotPassword() {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:3000/api/auth/send-otp",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/send-otp`,
         { email },
         {
           withCredentials: true,
@@ -98,7 +98,7 @@ function ForgotPassword() {
     setSuccessMessage("");
     try {
       await axios.post(
-        "http://localhost:3000/api/auth/verify-otp",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/verify-otp`,
         { email, otp },
         {
           withCredentials: true,
@@ -149,7 +149,7 @@ function ForgotPassword() {
     setSuccessMessage("");
     try {
       await axios.post(
-        "http://localhost:3000/api/auth/reset-password",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/reset-password`,
         { email, otp, newPassword },
         {
           withCredentials: true,

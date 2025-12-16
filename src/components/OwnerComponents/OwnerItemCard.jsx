@@ -38,7 +38,7 @@ const OwnerItemCard = ({ item, refetch }) => {
     if (!window.confirm(`Delete ${name}?`)) return;
     try {
       setDeleting(true);
-      await axios.delete(`http://localhost:3000/api/item/delete-item/${_id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/item/delete-item/${_id}`, {
         withCredentials: true,
       });
       toast.show('Item deleted', 'success');
@@ -62,7 +62,7 @@ const OwnerItemCard = ({ item, refetch }) => {
       data.append('price', Number(form.price));
       if (imageFile) data.append('image', imageFile);
 
-      await axios.post(`http://localhost:3000/api/item/edit-item/${_id}`, data, {
+      await axios.post(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/item/edit-item/${_id}`, data, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });

@@ -53,7 +53,7 @@ const AddFoodItem = () => {
       data.append('price', Number(form.price));
       if (imageFile) data.append('image', imageFile);
 
-      const res = await axios.post('http://localhost:3000/api/item/add-item', data, {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/item/add-item`, data, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });

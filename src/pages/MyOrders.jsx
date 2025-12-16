@@ -493,7 +493,7 @@ export default function MyOrders() {
                         {shopOrder.items?.map((item, index) => (
                           <div key={item._id || `collapsed-item-${shopOrder._id}-${index}`} className="flex items-center justify-between py-2 border-t border-gray-100">
                             <div className="flex items-center space-x-3">
-                              {item.item?.image ? (
+                               {item.item?.image ? (
                                 <img 
                                   src={item.item.image} 
                                   alt={item.item?.name || 'Food item'} 

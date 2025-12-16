@@ -128,7 +128,7 @@ const Nav = () => {
   // Add toast to handleLogout dependencies
   const handleLogout = useCallback(async () => {
     try {
-      await axios.get('http://localhost:3000/api/auth/signout', {
+      await axios.get(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/signout`, {
         withCredentials: true
       });
       toast.show('Signed out', 'success');

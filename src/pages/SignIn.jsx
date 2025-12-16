@@ -72,7 +72,7 @@ function SignIn() {
       const user = result.user;
 
       const response = await axios.post(
-        "http://localhost:3000/api/auth/google",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/google`,
         {
           googleId: user.uid,
           email: user.email,
@@ -121,7 +121,7 @@ function SignIn() {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/signin",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/signin`,
         {
           email: formData.email,
           password: formData.password,

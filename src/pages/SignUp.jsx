@@ -45,7 +45,7 @@ function SignUp() {
       const user = result.user;
 
       const response = await axios.post(
-        "http://localhost:3000/api/auth/google",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/google`,
         {
           googleId: user.uid,
           email: user.email,
@@ -134,7 +134,7 @@ function SignUp() {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/signup",
+        `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/auth/signup`,
         {
           fullName: formData.fullName,
           email: formData.email,

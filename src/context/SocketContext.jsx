@@ -15,7 +15,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Create socket connection
-    const socketInstance = io('http://localhost:3000', {
+    const socketInstance = io(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}`, {
       withCredentials: true,
     });
 

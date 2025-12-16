@@ -64,7 +64,7 @@ const DeliveryBoy = () => {
   const { socket } = useSocket(); 
   const { userData } = useSelector((state) => state.user); 
 
-  const apiBase = 'http://localhost:3000/api/delivery';
+  const apiBase = `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/delivery`;
 
   // Fetch orders assigned to the current delivery boy AND new requests
   const fetchOrders = useCallback(async () => {

@@ -12,7 +12,7 @@ const useGetMyShop = () => {
     const fetchShop = async () => {
       dispatch(setUserLoading(true));
       try {
-        const result = await axios.get("http://localhost:3000/api/shop/get-my", {
+        const result = await axios.get(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/shop/get-my`, {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",

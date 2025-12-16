@@ -13,7 +13,7 @@ const useGetShopItems = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get('http://localhost:3000/api/item/shop-items', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/item/shop-items`, {
         withCredentials: true,
       });
 
