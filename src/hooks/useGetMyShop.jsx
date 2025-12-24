@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
-import { setUserData, setUserLoading } from "../redux/userSlice"; // adjust path as needed
 import { setMyShopData } from "../redux/ownerSlice";
 import { toast } from "react-hot-toast";
 
@@ -10,7 +9,6 @@ const useGetMyShop = () => {
 
   useEffect(() => {
     const fetchShop = async () => {
-      dispatch(setUserLoading(true));
       try {
         const result = await axios.get(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/shop/get-my`, {
           withCredentials: true,
@@ -32,8 +30,6 @@ const useGetMyShop = () => {
           console.error("Unexpected error:", error.message);
           toast.error("An unexpected error occurred");
         }
-        // mark as not loading even on error so routes can render
-        dispatch(setUserLoading(false));
       }
     };
 

@@ -6,6 +6,20 @@ import { useNavigate } from "react-router-dom";
 
 const SetupShopCard = ({ myShopData }) => {
   const navigate = useNavigate();
+  if (myShopData === null) {
+    return (
+      <div className="flex justify-center mt-10">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-10 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const shopExists = myShopData && myShopData.name;
 
   // ✅ If shop exists - show professional summary card
