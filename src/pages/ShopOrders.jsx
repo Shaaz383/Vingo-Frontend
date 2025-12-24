@@ -41,9 +41,9 @@ export default function ShopOrders() {
             colorClass = 'bg-green-600';
             break;
         case 'delivered':
-            label = 'Delivered';
-            colorClass = 'bg-red-600'; 
-            break;
+          label = 'Delivered';
+          colorClass = 'bg-green-600'; 
+          break;
         case 'cancelled':
             label = 'Cancelled';
             colorClass = 'bg-gray-400';
@@ -272,6 +272,29 @@ export default function ShopOrders() {
                     </div>
                   </div>
                 </div>
+                {(() => {
+                  const steps = ['pending','accepted','preparing','ready_for_pickup','out_for_delivery','delivered'];
+                  const current = (so.status || '').toLowerCase() === 'created' ? 'pending' : (so.status || '').toLowerCase();
+                  const idx = Math.max(0, steps.indexOf(current));
+                  const percent = Math.max(0, Math.min(100, Math.round((idx/(steps.length-1))*100)));
+                  return (
+                    <div className="mt-3">
+                      <div className="relative h-2 bg-gray-200 rounded-full">
+                        <div className="absolute left-0 top-0 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600" style={{ width: `${percent}%` }}></div>
+                        <div className="absolute inset-0 flex items-center justify-between">
+                          {steps.map((s, i) => (
+                            <div key={s} className={`h-3 w-3 rounded-full border-2 border-white shadow ${i <= idx ? 'bg-green-600' : 'bg-gray-300'}`}></div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-6 text-[10px] sm:text-xs text-gray-700">
+                        {steps.map((s) => (
+                          <div key={s} className="text-center capitalize font-medium">{s.replace(/_/g,' ')}</div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">

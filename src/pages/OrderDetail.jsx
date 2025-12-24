@@ -102,7 +102,7 @@ export default function OrderDetail() {
             break;
         case 'delivered':
             label = 'Delivered';
-            colorClass = 'bg-red-600'; 
+            colorClass = 'bg-green-600'; 
             icon = '🎉';
             customMessage = 'Enjoy your meal!';
             break;
@@ -203,7 +203,30 @@ export default function OrderDetail() {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {(() => {
+          const steps = ['pending','accepted','preparing','ready_for_pickup','out_for_delivery','delivered'];
+          const current = (overallOrderStatus || '').toLowerCase() === 'created' ? 'pending' : (overallOrderStatus || '').toLowerCase();
+          const idx = Math.max(0, steps.indexOf(current));
+          const percent = Math.max(0, Math.min(100, Math.round((idx/(steps.length-1))*100)));
+          return (
+            <div className="mb-6">
+              <div className="relative h-3 bg-gray-200 rounded-full">
+                <div className="absolute left-0 top-0 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600" style={{ width: `${percent}%` }}></div>
+                <div className="absolute inset-0 flex items-center justify-between px-1">
+                  {steps.map((s, i) => (
+                    <div key={s} className={`h-4 w-4 rounded-full border-2 ${i <= idx ? 'border-green-200 bg-green-600' : 'border-gray-200 bg-gray-300'}`}></div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-6 text-[10px] sm:text-xs text-gray-700">
+                {steps.map((s) => (
+                  <div key={s} className="text-center capitalize font-medium">{s.replace(/_/g,' ')}</div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Order Summary & Delivery Details */}
           <div className="md:col-span-2 space-y-6">
             
@@ -365,59 +388,7 @@ export default function OrderDetail() {
             </div>
           </div>
           
-          {/* Order Timeline (Side Bar) */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Order Status Timeline
-              </h2>
-              
-              {/* Simplified Timeline */}
-              <div className="space-y-6">
-                {['created', 'pending', 'preparing', 'accepted', 'ready_for_pickup', 'out_for_delivery', 'delivered'].map((step, index) => {
-                    const currentStatus = overallOrderStatus; 
-                    const isActive = currentStatus?.toLowerCase() === step; 
-                    
-                    const progressSteps = ['pending', 'preparing', 'accepted', 'ready_for_pickup', 'out_for_delivery', 'delivered'];
-                    const currentProgressIndex = progressSteps.indexOf(currentStatus?.toLowerCase());
-                    const stepIndex = progressSteps.indexOf(step);
-                    const isCompleted = stepIndex < currentProgressIndex; 
-
-                    const stepProps = getStatusProps(step);
-
-                    return (
-                        <div key={step} className="flex">
-                            <div className="flex flex-col items-center mr-4">
-                                <div className={`rounded-full h-8 w-8 ${isCompleted ? 'bg-green-500' : isActive ? 'bg-red-500' : 'bg-gray-300'} text-white flex items-center justify-center`}>
-                                    {isCompleted || isActive ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                    ) : (
-                                        <span>{index + 1}</span>
-                                    )}
-                                </div>
-                                {index < 6 && ( 
-                                    <div className={`h-full border-l-2 ${isCompleted ? 'border-green-500' : 'border-gray-300'} mx-auto`}></div>
-                                )}
-                            </div>
-                            <div className="pb-6">
-                                <p className={`font-medium ${isCompleted || isActive ? 'text-black' : 'text-gray-500'}`}>
-                                    {stepProps.label}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    {stepProps.customMessage}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
