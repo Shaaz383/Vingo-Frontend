@@ -152,7 +152,7 @@ function SignUp() {
       dispatch(setUserData(response.data.user));
 
       console.log("Signup success:", response.data);
-      toast.success("Account created successfully! Please sign in.");
+      toast.success("Account created successfully! You are now signed in.");
 
       setFormData({
         fullName: "",
@@ -163,7 +163,7 @@ function SignUp() {
         role: "user",
       });
 
-      navigate("/signin");
+      navigate("/");
     } catch (error) {
       console.error("Signup error:", error);
       if (error.response)

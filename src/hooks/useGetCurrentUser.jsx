@@ -11,7 +11,7 @@ const useGetCurrentUser = () => {
     const fetchUser = async () => {
       dispatch(setUserLoading(true));
       try {
-        const result = await axios.get("http://localhost:3000/api/user/current-user", {
+        const result = await axios.get(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/user/current-user`, {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
