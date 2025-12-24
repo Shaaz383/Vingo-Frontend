@@ -113,10 +113,10 @@ const ProfileDropdown = ({
                 </>
               )}
 
-              <button onClick={() => navigateAndClose('/settings')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              {/* <button onClick={() => navigateAndClose('/settings')} className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                 <FaCog className="text-gray-400 w-4" />
                 <span>Settings</span>
-              </button>
+              </button> */}
               
               <hr className="my-2 border-gray-100" />
               
