@@ -4,6 +4,7 @@ import { useToast } from '@/context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
 import MapPicker from '@/components/MapPicker';
 import { placeOrder as placeOrderApi } from '@/services/orderApi';
+import { createRazorpayOrder, verifyRazorpayPayment } from '@/services/paymentApi';
 import { clearCart } from '@/redux/cartSlice';
 import { toast as hotToast } from 'react-hot-toast';
 
@@ -55,6 +56,8 @@ const Checkout = () => {
 
   const isPaymentValid = () => {
     if (paymentMethod === 'COD') return true;
+    if (paymentMethod === 'RAZORPAY') return true;
+    if (paymentMethod === 'RAZORPAY_UPI') return true;
     if (paymentMethod === 'UPI') return /.+@.+/.test(upiId);
     if (paymentMethod === 'CARD') {
       return card.number.length >= 12 && card.name && /\d{2}\/\d{2}/.test(card.expiry) && card.cvv.length >= 3;
@@ -63,6 +66,15 @@ const Checkout = () => {
   };
 
   const canPlaceOrder = items.length > 0 && isAddressValid() && isPaymentValid() && !!location;
+
+  const loadRazorpay = () => new Promise((resolve, reject) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error('Failed to load Razorpay'));
+    document.body.appendChild(script);
+  });
 
   const placeOrder = async () => {
     if (!canPlaceOrder) return;
@@ -88,20 +100,74 @@ const Checkout = () => {
           method: paymentMethod
         }
       };
-      
-      const response = await placeOrderApi(orderData);
-      
-      if (response.success) {
-        toast.show('Order placed successfully!', 'success');
-        dispatch(clearCart());
-        navigate('/order-placed', { 
-          state: { 
-            orderId: response.order?._id || 'N/A',
-            totalAmount: response.order?.totalAmount || 0
-          } 
-        });
+      if (paymentMethod === 'RAZORPAY' || paymentMethod === 'RAZORPAY_UPI') {
+        await loadRazorpay();
+        const rpInit = await createRazorpayOrder(orderData.items);
+        if (!rpInit.success) {
+          hotToast.error(rpInit.message || 'Failed to initialize payment');
+          return;
+        }
+        const options = {
+          key: rpInit.keyId,
+          amount: rpInit.amount,
+          currency: rpInit.currency,
+          name: 'Vingo',
+          description: 'Order Payment',
+          order_id: rpInit.orderId,
+          prefill: {
+            name: address.name,
+            email: '',
+            contact: address.mobileNumber || ''
+          },
+          theme: { color: '#ef4444' },
+          method: paymentMethod === 'RAZORPAY_UPI' ? { upi: true, netbanking: false, card: false, wallet: false, emi: false } : undefined,
+          config: paymentMethod === 'RAZORPAY_UPI' ? { upi: { flow: 'intent' } } : undefined,
+          handler: async function (response) {
+            try {
+              const verifyRes = await verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData
+              });
+              if (verifyRes.success) {
+                toast.show('Payment successful. Order created!', 'success');
+                dispatch(clearCart());
+                navigate('/order-placed', {
+                  state: {
+                    orderId: verifyRes.order?._id || 'N/A',
+                    totalAmount: verifyRes.order?.totalAmount || 0
+                  }
+                });
+              } else {
+                hotToast.error(verifyRes.message || 'Payment verification failed');
+              }
+            } catch (err) {
+              hotToast.error(err?.message || 'Payment verification error');
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              hotToast('Payment cancelled');
+            }
+          }
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       } else {
-        toast.show(response.message || 'Failed to place order', 'error');
+        const response = await placeOrderApi(orderData);
+        if (response.success) {
+          toast.show('Order placed successfully!', 'success');
+          dispatch(clearCart());
+          navigate('/order-placed', { 
+            state: { 
+              orderId: response.order?._id || 'N/A',
+              totalAmount: response.order?.totalAmount || 0
+            } 
+          });
+        } else {
+          toast.show(response.message || 'Failed to place order', 'error');
+        }
       }
     } catch (error) {
         console.error('Error placing order:', error);
@@ -219,6 +285,26 @@ const Checkout = () => {
                   onChange={() => setPaymentMethod('UPI')}
                 />
                 <span>UPI</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="payment"
+                  value="RAZORPAY"
+                  checked={paymentMethod === 'RAZORPAY'}
+                  onChange={() => setPaymentMethod('RAZORPAY')}
+                />
+                <span>Razorpay (Recommended)</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="payment"
+                  value="RAZORPAY_UPI"
+                  checked={paymentMethod === 'RAZORPAY_UPI'}
+                  onChange={() => setPaymentMethod('RAZORPAY_UPI')}
+                />
+                <span>Razorpay UPI</span>
               </label>
               {paymentMethod === 'UPI' && (
                 <div className="ml-6">
