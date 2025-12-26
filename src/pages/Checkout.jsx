@@ -32,10 +32,37 @@ const Checkout = () => {
   const [upiId, setUpiId] = useState('');
   const [card, setCard] = useState({ number: '', name: '', expiry: '', cvv: '' });
   const [location, setLocation] = useState(null); // { lat, lng }
+  const [isManualAddressUpdate, setIsManualAddressUpdate] = useState(false);
   
   // Update location when address changes
-  const handleLocationChange = (newLocation) => {
-    setLocation(newLocation);
+  const handleLocationChange = async (newLocation) => {
+    const { lat, lng, source } = newLocation;
+    setLocation({ lat, lng });
+
+    // If source is 'search', it means the update came from MapPicker forward geocoding the address we passed it.
+    // In that case, we don't want to reverse geocode and overwrite the address.
+    if (source !== 'search') {
+      setIsManualAddressUpdate(false);
+      try {
+        const result = await reverseGeocodeGeoapify(lat, lng);
+        if (result) {
+          setAddress(prev => ({
+            ...prev,
+            city: result.city || prev.city,
+            state: result.state || prev.state,
+            postalCode: result.pincode || prev.postalCode,
+            line1: result.address || prev.line1,
+          }));
+        }
+      } catch (error) {
+        console.error("Reverse geocoding failed", error);
+      }
+    }
+  };
+
+  const updateAddressField = (field, value) => {
+    setIsManualAddressUpdate(true);
+    setAddress(prev => ({ ...prev, [field]: value }));
   };
 
   const deliveryFee = 40;
@@ -195,50 +222,50 @@ const Checkout = () => {
                 className="border rounded-md px-3 py-2"
                 placeholder="Full Name"
                 value={address.name}
-                onChange={(e) => setAddress(a => ({ ...a, name: e.target.value }))}
+                onChange={(e) => updateAddressField('name', e.target.value)}
               />
 
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="Address line 1"
                 value={address.line1}
-                onChange={(e) => setAddress(a => ({ ...a, line1: e.target.value }))}
+                onChange={(e) => updateAddressField('line1', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="Address line 2 (optional)"
                 value={address.line2}
-                onChange={(e) => setAddress(a => ({ ...a, line2: e.target.value }))}
+                onChange={(e) => updateAddressField('line2', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="City"
                 value={address.city}
-                onChange={(e) => setAddress(a => ({ ...a, city: e.target.value }))}
+                onChange={(e) => updateAddressField('city', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="State"
                 value={address.state}
-                onChange={(e) => setAddress(a => ({ ...a, state: e.target.value }))}
+                onChange={(e) => updateAddressField('state', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="Mobile Number"
                 value={address.mobileNumber}
-                onChange={(e) => setAddress(a => ({ ...a, mobileNumber: e.target.value }))}
+                onChange={(e) => updateAddressField('mobileNumber', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="Postal code"
                 value={address.postalCode}
-                onChange={(e) => setAddress(a => ({ ...a, postalCode: e.target.value }))}
+                onChange={(e) => updateAddressField('postalCode', e.target.value)}
               />
               <input
                 className="border rounded-md px-3 py-2"
                 placeholder="Delivery instructions (optional)"
                 value={address.instructions}
-                onChange={(e) => setAddress(a => ({ ...a, instructions: e.target.value }))}
+                onChange={(e) => updateAddressField('instructions', e.target.value)}
               />
             </div>
             {!isAddressValid() && (

@@ -95,7 +95,7 @@ const MapPicker = ({ value, onChange, height = 300, address }) => {
           const { lat, lon } = data[0];
           markerRef.current.setLatLng([lat, lon]);
           mapRef.current.setView([lat, lon], 15);
-          onChange?.({ lat: parseFloat(lat), lng: parseFloat(lon) });
+          onChange?.({ lat: parseFloat(lat), lng: parseFloat(lon), source: 'search' });
         }
       })
       .catch(err => console.error("Geocoding error:", err))
